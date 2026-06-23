@@ -1,0 +1,33 @@
+﻿@model ProductModel
+@{
+    ViewData["Title"] = "Add Product";
+    var categories = ViewBag.Categories as List<CategoryModel>;
+}
+<h2>Add Product</h2>
+<form method="post">
+    <div class="form-group">
+        <label asp-for="ProductName"></label>
+        <input asp-for="ProductName" />
+        <span asp-validation-for="ProductName"></span>
+    </div>
+    <div class="form-group">
+        <label asp-for="CategoryId"></label>
+        <select asp-for="CategoryId" asp-items="@(new SelectList(categories, "CategoryId", "CategoryName"))"><option value="">Select Category</option></select>
+        <span asp-validation-for="CategoryId"></span>
+    </div>
+    <div class="form-group">
+        <label asp-for="Price"></label>
+        <input asp-for="Price" />
+        <span asp-validation-for="Price"></span>
+    </div>
+    <div class="form-group">
+        <label asp-for="Quantity"></label>
+        <input asp-for="Quantity" />
+        <span asp-validation-for="Quantity"></span>
+    </div>
+    <button type="submit" class="btn btn-success">Save</button>
+    <a href="@Url.Action("Index")" class="btn btn-primary">Cancel</a>
+</form>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

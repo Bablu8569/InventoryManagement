@@ -1,0 +1,367 @@
+﻿@model DashboardModel
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<style>
+    .dashboard-stats {
+        display: grid;
+        grid-template-columns: repeat(4, 1fr);
+        gap: 15px;
+        margin-bottom: 30px;
+    }
+    .stat-card {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        text-align: center;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        cursor: pointer;
+        transition: 0.2s;
+    }
+    .stat-card:hover { transform: translateY(-3px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+    .stat-card .number { font-size: 30px; font-weight: bold; color: #2c3e50; }
+    
+    .chart-board {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 30px;
+        margin-top: 20px;
+    }
+    .chart-card {
+        background: white;
+        padding: 20px;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .chart-card h4 { text-align: center; margin-bottom: 15px; color: #2c3e50; }
+    canvas { max-height: 300px; width: 100%; }
+    
+    .product-toggle {
+        text-align: center;
+        margin: 10px 0 20px 0;
+    }
+    .toggle-btn {
+        background: #f0f0f0;
+        border: none;
+        padding: 6px 16px;
+        margin: 0 5px;
+        border-radius: 30px;
+        cursor: pointer;
+        font-weight: 500;
+        transition: 0.2s;
+    }
+    .toggle-btn.active {
+        background: #2c3e50;
+        color: white;
+    }
+    .toggle-btn:hover:not(.active) {
+        background: #e0e0e0;
+    }
+    
+    .alert-success-custom {
+        background-color: #d4edda;
+        border-color: #c3e6cb;
+        color: #155724;
+        padding: 12px 20px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    .close-alert { background: none; border: none; font-size: 1.2rem; font-weight: bold; cursor: pointer; color: #155724; }
+    @@media (max-width: 768px) { .chart-board { grid-template-columns: 1fr; } .dashboard-stats { grid-template-columns: repeat(2, 1fr); } }
+</style>
+
+<h2>Dashboard</h2>
+
+@if (TempData["LoginSuccess"] != null)
+{
+    <div class="alert-success-custom" id="successAlert">
+        <span>✅ @TempData["LoginSuccess"]</span>
+        <button type="button" class="close-alert" onclick="document.getElementById('successAlert').style.display='none';">&times;</button>
+    </div>
+}
+
+<!-- Top stat cards (always visible) -->
+<div class="dashboard-stats">
+    <div class="stat-card" onclick="location.href='@Url.Action("Index", "Category")'">
+        <h3>Total Categories</h3>
+        <div class="number">@Model.TotalCategories</div>
+    </div>
+    <div class="stat-card" onclick="location.href='@Url.Action("Index", "Product")'">
+        <h3>Total Products</h3>
+        <div class="number">@Model.TotalProducts</div>
+    </div>
+    <div class="stat-card" onclick="location.href='@Url.Action("Index", "Product")?lowStock=true'">
+        <h3>Low Stock Items</h3>
+        <div class="number">@Model.LowStockCount</div>
+    </div>
+    <div class="stat-card" onclick="location.href='@Url.Action("Index", "Stock")?date=@DateTime.Now.ToString("yyyy-MM-dd")'">
+        <h3>Today's Transactions</h3>
+        <div class="number">@Model.TodayTransactions</div>
+    </div>
+</div>
+
+<!-- Charts -->
+<div class="chart-board">
+    @if (Model.CategoryNames.Any())
+    {
+        <div class="chart-card">
+            <h4>📊 Categories: Product Count</h4>
+            <canvas id="categoryChart"></canvas>
+        </div>
+    }
+
+    @if (Model.ProductNames.Any())
+    {
+        <div class="chart-card">
+            <h4>💰 Products: Average Price & Quantity Comparison</h4>
+            <div class="product-toggle">
+                <button id="toggleAvgPrice" class="toggle-btn active">Average Price (₹)</button>
+                <button id="toggleTotalQty" class="toggle-btn">Total Quantity</button>
+            </div>
+            <canvas id="productChart"></canvas>
+        </div>
+    }
+
+    @if (Model.LowStockProductNames.Any())
+    {
+        <div class="chart-card">
+            <h4>⚠️ Low Stock Items (Click bar to filter by quantity)</h4>
+            <canvas id="lowStockChart"></canvas>
+        </div>
+    }
+
+    @if (Model.TransactionProductNames.Any())
+    {
+        <div class="chart-card">
+            <h4>📅 Today's Stock Movements</h4>
+            <canvas id="transactionChart"></canvas>
+        </div>
+    }
+</div>
+
+<!-- Bottom buttons -->
+<p>
+    <a href="@Url.Action("Index", "Category")" class="btn btn-primary">Manage Categories</a>
+    <a href="@Url.Action("Index", "Product")" class="btn btn-primary">Manage Products</a>
+    <a href="@Url.Action("Index", "Stock")" class="btn btn-primary">Stock Transaction</a>
+</p>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script>
+        
+        // 1. DATA FROM SERVER
+        
+        const categoryNames = @Html.Raw(Json.Serialize(Model.CategoryNames));
+        const productCounts = @Html.Raw(Json.Serialize(Model.CategoryProductCounts));
+        const productNames = @Html.Raw(Json.Serialize(Model.ProductNames));
+        const productPrices = @Html.Raw(Json.Serialize(Model.ProductPrices));
+        const productQuantities = @Html.Raw(Json.Serialize(Model.ProductQuantities));
+        
+        // ✅ Low Stock Data – Merge duplicates
+        const lowStockNamesRaw = @Html.Raw(Json.Serialize(Model.LowStockProductNames));
+        const lowStockQtysRaw = @Html.Raw(Json.Serialize(Model.LowStockQuantities));
+        
+        function mergeLowStockData(names, quantities) {
+            const uniqueMap = new Map();
+            for (let i = 0; i < names.length; i++) {
+                const name = names[i].trim();
+                if (uniqueMap.has(name)) {
+                    uniqueMap.set(name, Math.min(uniqueMap.get(name), quantities[i]));
+                } else {
+                    uniqueMap.set(name, quantities[i]);
+                }
+            }
+            return {
+                names: Array.from(uniqueMap.keys()),
+                quantities: Array.from(uniqueMap.values())
+            };
+        }
+        const lowStockData = mergeLowStockData(lowStockNamesRaw, lowStockQtysRaw);
+        const lowStockNames = lowStockData.names;
+        const lowStockQtys = lowStockData.quantities;
+
+        // ✅ Transaction Data – FIXED (previously missing)
+        const transNames = @Html.Raw(Json.Serialize(Model.TransactionProductNames));
+        const transQtys = @Html.Raw(Json.Serialize(Model.TransactionQuantities));
+
+        console.log('✅ Transaction Data:', transNames, transQtys);
+
+       
+        // 2. BASE URLs
+        
+        const categoryUrl = '@Url.Action("Index", "Category")';
+        const productUrl = '@Url.Action("Index", "Product")';
+        const stockUrl = '@Url.Action("Index", "Stock")';
+        const todayDate = '@DateTime.Now.ToString("yyyy-MM-dd")';
+
+       
+        // 3. REDIRECT FUNCTIONS
+        
+        function goToCategory(cat) { window.location.href = categoryUrl + '?search=' + encodeURIComponent(cat); }
+        function goToProductByName(prod) { window.location.href = productUrl + '?productName=' + encodeURIComponent(prod); }
+        function goToTransactions() { window.location.href = stockUrl + '?date=' + todayDate; }
+
+        
+        // 4. CHART INSTANCES
+        
+        let productChart = null;
+
+        
+        // 5. RENDER PRODUCT CHART
+        
+        function renderProductChart(metric) {
+            const canvas = document.getElementById('productChart');
+            if (!canvas) return;
+            
+            let chartData, label;
+            if (metric === 'price') {
+                chartData = productPrices;
+                label = 'Average Price (₹)';
+            } else {
+                chartData = productQuantities;
+                label = 'Total Quantity';
+            }
+            
+            if (productChart) productChart.destroy();
+            
+            productChart = new Chart(canvas, {
+                type: 'bar',
+                data: {
+                    labels: productNames,
+                    datasets: [{
+                        label: label,
+                        data: chartData,
+                        backgroundColor: '#e74c3c'
+                    }]
+                },
+                options: {
+                    onClick: (e, active) => {
+                        if (active.length) {
+                            const product = productNames[active[0].index];
+                            goToProductByName(product);
+                        }
+                    },
+                    scales: { y: { beginAtZero: true, title: { display: true, text: label } } },
+                    responsive: true
+                }
+            });
+        }
+
+        
+        // 6. CREATE CATEGORY CHART
+        
+        function createCategoryChart() {
+            const canvas = document.getElementById('categoryChart');
+            if (!canvas) return;
+            new Chart(canvas, {
+                type: 'bar',
+                data: { 
+                    labels: categoryNames, 
+                    datasets: [{ 
+                        label: 'Number of Products', 
+                        data: productCounts, 
+                        backgroundColor: '#3498db' 
+                    }] 
+                },
+                options: {
+                    onClick: (e, active) => { 
+                        if (active.length) goToCategory(categoryNames[active[0].index]); 
+                    },
+                    scales: { y: { beginAtZero: true, title: { display: true, text: 'Product Count' } } }
+                }
+            });
+        }
+
+        
+        // 7. CREATE LOW STOCK CHART
+        
+        function createLowStockChart() {
+            const canvas = document.getElementById('lowStockChart');
+            if (!canvas) return;
+            new Chart(canvas, {
+                type: 'bar',
+                data: { 
+                    labels: lowStockNames, 
+                    datasets: [{ 
+                        label: 'Stock Quantity', 
+                        data: lowStockQtys, 
+                        backgroundColor: '#f39c12' 
+                    }] 
+                },
+                options: {
+                    onClick: (e, active) => {
+                        if (active.length) {
+                            const quantity = lowStockQtys[active[0].index];
+                            window.location.href = productUrl + '?minQuantity=' + quantity + '&maxQuantity=' + quantity;
+                        }
+                    },
+                    scales: { y: { beginAtZero: true, title: { display: true, text: 'Quantity' } } }
+                }
+            });
+        }
+
+        
+        // 8. CREATE TRANSACTION CHART (FIXED)
+        
+        function createTransactionChart() {
+            const canvas = document.getElementById('transactionChart');
+            if (!canvas) return;
+            
+            // ✅ Check if data exists
+            if (!transNames || transNames.length === 0) {
+                console.log('⚠️ No transaction data available');
+                return;
+            }
+            
+            new Chart(canvas, {
+                type: 'bar',
+                data: { 
+                    labels: transNames, 
+                    datasets: [{ 
+                        label: 'Quantity Moved', 
+                        data: transQtys, 
+                        backgroundColor: '#2ecc71' 
+                    }] 
+                },
+                options: {
+                    onClick: () => goToTransactions(),
+                    scales: { y: { beginAtZero: true, title: { display: true, text: 'Total Quantity' } } },
+                    responsive: true
+                }
+            });
+        }
+
+        
+        // 9. INITIALIZE CHARTS
+        
+        if (document.getElementById('categoryChart')) createCategoryChart();
+        if (document.getElementById('productChart')) renderProductChart('price');
+        if (document.getElementById('lowStockChart')) createLowStockChart();
+        if (document.getElementById('transactionChart')) createTransactionChart();
+
+        
+        // 10. TOGGLE BUTTONS
+        
+        const togglePrice = document.getElementById('toggleAvgPrice');
+        const toggleQty = document.getElementById('toggleTotalQty');
+        
+        if (togglePrice && toggleQty) {
+            togglePrice.addEventListener('click', () => {
+                togglePrice.classList.add('active');
+                toggleQty.classList.remove('active');
+                renderProductChart('price');
+            });
+            
+            toggleQty.addEventListener('click', () => {
+                toggleQty.classList.add('active');
+                togglePrice.classList.remove('active');
+                renderProductChart('quantity');
+            });
+        }
+    </script>
+}

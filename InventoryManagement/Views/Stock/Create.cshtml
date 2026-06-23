@@ -1,0 +1,63 @@
+﻿@model InventoryManagement.Models.StockEntryModel
+@{
+    ViewData["Title"] = "Stock Transaction";
+}
+
+<link rel="stylesheet" href="~/css/stock-transaction.css" />
+
+<div class="form-container">
+    <div class="form-header">
+        <h3><i class="fas fa-exchange-alt me-2"></i> Stock Transaction</h3>
+    </div>
+    <div class="form-body">
+        @if (TempData["Success"] != null)
+        {
+            <div class="alert-simple">
+                <i class="fas fa-check-circle me-1"></i> @TempData["Success"]
+            </div>
+        }
+
+        <form method="post" asp-action="Create">
+            <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
+            <div class="form-group">
+                <label class="form-label"><i class="fas fa-box me-1"></i> Select Product</label>
+                <select asp-for="ProductId" class="form-select" asp-items="@(new SelectList(ViewBag.Products, "ProductId", "ProductName"))">
+                    <option value="">-- Select Product --</option>
+                </select>
+                <span asp-validation-for="ProductId" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label"><i class="fas fa-sort-amount-up me-1"></i> Quantity</label>
+                <input asp-for="Quantity" class="form-control" type="number" min="1" placeholder="Enter quantity" />
+                <span asp-validation-for="Quantity" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label"><i class="fas fa-arrow-right-arrow-left me-1"></i> Transaction Type</label>
+                <div class="radio-group">
+                    <label>
+                        <input type="radio" asp-for="TransactionType" value="In" /> Stock In (Add)
+                    </label>
+                    <label>
+                        <input type="radio" asp-for="TransactionType" value="Out" /> Stock Out (Remove)
+                    </label>
+                </div>
+                <span asp-validation-for="TransactionType" class="text-danger"></span>
+            </div>
+
+            <hr />
+            <div>
+                <button type="submit" class="btn-submit"><i class="fas fa-check me-1"></i> Submit</button>
+                <a asp-action="Index" class="btn-history"><i class="fas fa-history me-1"></i> View History</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.5/jquery.validate.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validation-unobtrusive/3.2.13/jquery.validate.unobtrusive.min.js"></script>
+}

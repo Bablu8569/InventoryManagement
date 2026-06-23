@@ -1,0 +1,360 @@
+﻿@{
+    ViewData["Title"] = "Inventory Access";
+}
+
+<style>
+    * {
+        box-sizing: border-box;
+    }
+
+    body {
+        background: #f8fafc;
+        font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+    }
+
+    .page-wrapper {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 1.5rem 1rem;
+    }
+
+    .page-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid #e9edf2;
+    }
+
+        .page-header h2 {
+            font-weight: 600;
+            font-size: 1.5rem;
+            color: #0b1a33;
+            margin: 0;
+            letter-spacing: -0.01em;
+        }
+
+        .page-header .badge-admin {
+            background: #eef2ff;
+            color: #384b7a;
+            padding: 0.3rem 1rem;
+            border-radius: 30px;
+            font-size: 0.75rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+    .panel {
+        background: #ffffff;
+        border-radius: 14px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+        border: 1px solid #eef1f5;
+        overflow: hidden;
+        transition: box-shadow 0.15s;
+    }
+
+        .panel:hover {
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+        }
+
+    .panel-header {
+        padding: 1rem 1.25rem;
+        background: #fafbfc;
+        border-bottom: 1px solid #eef1f5;
+        font-weight: 600;
+        font-size: 0.95rem;
+        color: #1a2a4a;
+        letter-spacing: 0.01em;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .panel-body {
+        padding: 1.25rem;
+    }
+
+    .form-group {
+        margin-bottom: 1.25rem;
+    }
+
+        .form-group:last-of-type {
+            margin-bottom: 0;
+        }
+
+    .form-label {
+        display: block;
+        font-weight: 500;
+        font-size: 0.85rem;
+        color: #334155;
+        margin-bottom: 0.35rem;
+    }
+
+    .form-select {
+        width: 100%;
+        padding: 0.6rem 0.9rem;
+        border-radius: 8px;
+        border: 1px solid #dce1e9;
+        background: #ffffff;
+        font-size: 0.9rem;
+        color: #1e293b;
+        transition: border-color 0.15s, box-shadow 0.15s;
+        appearance: auto;
+        cursor: pointer;
+    }
+
+        .form-select:focus {
+            border-color: #4f7df3;
+            box-shadow: 0 0 0 3px rgba(79, 125, 243, 0.12);
+            outline: none;
+        }
+
+    .btn-modify {
+        background: #2d4b8c;
+        border: none;
+        border-radius: 30px;
+        padding: 0.35rem 1.2rem;
+        font-weight: 500;
+        font-size: 0.8rem;
+        color: #ffffff;
+        cursor: pointer;
+        transition: background 0.15s, transform 0.1s;
+        letter-spacing: 0.01em;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+        .btn-modify:hover {
+            background: #1f3a6b;
+        }
+
+        .btn-modify:active {
+            transform: scale(0.95);
+        }
+
+        .btn-modify:disabled {
+            background: #9aaec9;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .btn-modify .spinner {
+            display: inline-block;
+            width: 0.8rem;
+            height: 0.8rem;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: #ffffff;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            vertical-align: middle;
+        }
+
+   
+
+    .status-message {
+        margin-top: 1rem;
+        border-radius: 8px;
+        padding: 0.7rem 1rem;
+        font-size: 0.85rem;
+        display: none;
+        border-left: 3px solid transparent;
+    }
+
+        .status-message.show {
+            display: block;
+        }
+
+        .status-message.success {
+            background: #e6f5ec;
+            border-left-color: #2a8e5c;
+            color: #145c3a;
+        }
+
+        .status-message.error {
+            background: #fde8e8;
+            border-left-color: #c73b3b;
+            color: #962020;
+        }
+
+    .alert {
+        padding: 0.8rem 1rem;
+        border-radius: 8px;
+        background: #fde8e8;
+        color: #962020;
+        border: 1px solid #fad1d1;
+        margin-bottom: 1.25rem;
+        font-size: 0.9rem;
+    }
+</style>
+
+<div class="page-wrapper">
+    <!-- Header -->
+    <div class="page-header">
+        <h2>🔐 Inventory Access – User Role Management</h2>
+        <span class="badge-admin">Admin Only</span>
+    </div>
+
+    <!-- Error alert -->
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert">@TempData["Error"]</div>
+    }
+
+    <!-- Single card -->
+    <div class="panel">
+        <!-- Panel Header with Modify Button -->
+        <div class="panel-header">
+            <span><i class="fas fa-user-cog me-2"></i> Modify User Role</span>
+            <button id="modifyBtn" class="btn-modify">
+                <i class="fas fa-edit me-1"></i> Modify
+            </button>
+        </div>
+        <div class="panel-body">
+            <!-- User dropdown -->
+            <div class="form-group">
+                <label class="form-label" for="userDropdown">Select User</label>
+                <select id="userDropdown" class="form-select">
+                    <option value="">-- Choose a user --</option>
+                </select>
+            </div>
+
+            <!-- ✅ New role dropdown – values 1 and 2 for database -->
+            <div class="form-group">
+                <label class="form-label" for="roleDropdown">New Role</label>
+                <select id="roleDropdown" class="form-select">
+                    @* <option value="1">Admin</option> *@
+                    <option value="2">Normal User</option>
+                    <option value="3">Super User</option>
+                </select>
+                </select>
+            </div>
+
+            <!-- Status message -->
+            <div id="statusMessage" class="status-message"></div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" />
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function() {
+        var usersData = [];
+
+        function loadUsers() {
+        $.ajax({
+        url: '@Url.Action("GetAllUsers", "Account")',
+        type: 'GET',
+        success: function(res) {
+        if (res.success) {
+        usersData = res.data;
+        var dropdown = $('#userDropdown');
+        dropdown.find('option:not(:first)').remove();
+        $.each(usersData, function(i, user) {
+        dropdown.append($('<option>', {
+        value: user.userId,
+        text: user.username + ' (' + user.role + ')'
+        }));
+        });
+        if (usersData.length > 0) {
+        dropdown.val(usersData[0].userId).trigger('change');
+        }
+        } else {
+        showMessage('Failed to load users.', 'error');
+        }
+        },
+        error: function() {
+        showMessage('Error loading users.', 'error');
+        }
+        });
+        }
+
+        // ✅ Update role display with numbers
+        function updateRoleDisplay() {
+        var userId = $('#userDropdown').val();
+        if (!userId) {
+        $('#roleDropdown').val('');
+        return;
+        }
+        var user = usersData.find(u => u.userId == userId);
+        if (user) {
+        var role = user.role;
+        if (role === "1" || role === "Admin") {
+        $('#roleDropdown').val('1');
+        } else if (role === "2" || role === "Normal user" || role === "Normal") {
+        $('#roleDropdown').val('2');
+        } else if (role === "3" || role === "Super user" || role === "Super") {
+        $('#roleDropdown').val('3');
+        } else {
+        $('#roleDropdown').val(role);
+        }
+        }
+        }
+
+        function showMessage(msg, type) {
+        var el = $('#statusMessage');
+        el.removeClass('success error show').addClass(type + ' show').html(msg);
+        setTimeout(function() {
+        el.removeClass('show');
+        }, 5000);
+        }
+
+        loadUsers();
+
+        $('#userDropdown').on('change', function() {
+        updateRoleDisplay();
+        });
+
+        // ✅ Modify button click
+        $('#modifyBtn').on('click', function() {
+        var userId = $('#userDropdown').val();
+        var newRole = $('#roleDropdown').val();
+
+        if (!userId) {
+        alert('Please select a user.');
+        return;
+        }
+        if (!newRole) {
+        alert('Please select a role.');
+        return;
+        }
+
+        var $btn = $(this);
+        $btn.prop('disabled', true).html('<span class="spinner"></span> Updating...');
+
+        $.ajax({
+        url: '@Url.Action("UpdateUserRole", "Account")',
+        type: 'POST',
+        data: { userId: userId, newRole: newRole },
+        success: function(res) {
+        if (res.success) {
+        showMessage(res.message, 'success');
+        loadUsers();
+                            
+        // ✅ Force logout if current user's role changed
+        if (res.forceLogout === true) {
+        setTimeout(function() {
+        alert('Your role has been changed.\nPlease login again to see changes.');
+        window.location.href = '/Account/Logout';
+        }, 2000);
+        }
+        } else {
+        showMessage(res.message, 'error');
+        }
+        },
+        error: function() {
+        showMessage('Server error. Please try again.', 'error');
+        },
+        complete: function() {
+        $btn.prop('disabled', false).html('<i class="fas fa-edit me-2"></i> Modify');
+        }
+        });
+        });
+        });
+    </script>
+}

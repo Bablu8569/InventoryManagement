@@ -1,0 +1,108 @@
+﻿@model List<InventoryManagement.Models.StockTransactionModel>
+@{
+    ViewData["Title"] = "Transaction History";
+}
+<!-- AG Grid CSS & JS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/styles/ag-grid.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/styles/ag-theme-alpine.css">
+<script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/dist/ag-grid-community.min.js"></script>
+<link rel="stylesheet" href="~/css/transaction-history.css" />
+
+<div class="history-page">
+    <h2>📜 Transaction History</h2>
+
+    <!-- Filter section (server-side, stays as is) -->
+   
+    <div class="filter-section">
+        <form method="get" asp-action="Index">
+            <div class="filter-row">
+                <div class="field">
+                    <label><i class="far fa-calendar-alt"></i> From Date</label>
+                    <input type="date" name="fromDate" value="@ViewBag.FromDate" />
+                </div>
+                <div class="field">
+                    <label><i class="far fa-calendar-alt"></i> To Date</label>
+                    <input type="date" name="toDate" value="@ViewBag.ToDate" />
+                </div>
+                <div class="actions">
+                    <button type="submit"><i class="fas fa-filter"></i> Apply</button>
+                    <a asp-action="Index"><i class="fas fa-eraser"></i> Clear</a>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <a asp-action="Create" class="btn btn-primary">New Transaction</a>
+    }
+    else
+    {
+        <!-- AG Grid container -->
+        <div id="transactionGrid" class="ag-theme-alpine" style="height: 500px; width: 100%;"></div>
+    }
+
+    <div class="back-link">
+        <a asp-controller="Dashboard" asp-action="Index">← Back to Dashboard</a>
+    </div>
+</div>
+
+<script>
+    // Pass the model data from server to JavaScript
+    const rowData = @Html.Raw(Json.Serialize(Model));
+
+    // Define column definitions
+    const columnDefs = [
+    { headerName: "ID", field: "transactionId", width: 100, filter: 'agNumberColumnFilter', sortable: true },
+    { headerName: "Product", field: "productName", width: 200, filter: 'agTextColumnFilter', sortable: true },
+    { headerName: "Quantity", field: "quantity", width: 120, filter: 'agNumberColumnFilter', sortable: true },
+    {
+    headerName: "Type",
+    field: "transactionType",
+    width: 120,
+    filter: 'agTextColumnFilter',
+    sortable: true,
+    cellRenderer: (params) => {
+    return params.value === "In"
+    ? '<span class="type-in">Stock In</span>'
+    : '<span class="type-out">Stock Out</span>';
+    }
+    },
+    {
+    headerName: "Date & Time",
+    field: "transactionDate",
+    width: 180,
+    filter: 'agDateColumnFilter',
+    sortable: true,
+    valueFormatter: (params) => {
+    if (!params.value) return '';
+    const date = new Date(params.value);
+    return date.toLocaleString();
+    }
+    }
+    ];
+
+    // Grid options – no pagination
+    const gridOptions = {
+    columnDefs: columnDefs,
+    rowData: rowData,
+    defaultColDef: {
+    sortable: true,
+    resizable: true,
+    filter: true,
+    floatingFilter: true   // adds floating filter bar
+    },
+    pagination: false,          // ✅ no pagination
+    animateRows: true,
+    enableCellTextSelection: true,
+    ensureDomOrder: true
+    };
+
+    // Initialize grid when page loads
+    document.addEventListener('DOMContentLoaded', () => {
+    const gridDiv = document.querySelector('#transactionGrid');
+    if (gridDiv) {
+    new agGrid.Grid(gridDiv, gridOptions);
+    }
+    });
+</script>

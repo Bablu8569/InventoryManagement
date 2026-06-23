@@ -1,0 +1,128 @@
+﻿@model LoginModel
+@{
+    Layout = null;
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+    <!-- ✅ Cache Disable Meta Tags -->
+   @*  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="Pragma" content="no-cache" />
+    <meta http-equiv="Expires" content="0" /> *@
+
+    <title>Login - Inventory Management</title>
+    <link rel="stylesheet" href="~/css/login.css" />
+
+    <style>
+            .success-message {
+                background-color: #d4edda;
+                border: 1px solid #c3e6cb;
+                color: #155724;
+                padding: 10px 15px;
+                border-radius: 8px;
+                margin-bottom: 20px;
+                text-align: center;
+                font-weight: 500;
+            }
+
+            .validation-summary-errors {
+                background-color: #f8d7da;
+                border: 1px solid #f5c6cb;
+                color: #721c24;
+                padding: 10px 15px;
+                border-radius: 8px;
+                margin-bottom: 20px;
+            }
+
+                .validation-summary-errors ul {
+                    margin: 0;
+                    padding-left: 20px;
+                }
+
+            .field-validation-error {
+                color: #dc3545;
+                font-size: 0.85rem;
+                display: block;
+                margin-top: 4px;
+            }
+
+            /* ✅ Prevent Back Button After Logout */
+            .back-button-prevention {
+                display: none;
+            }
+    </style>
+</head>
+<body>
+    <div class="login-container">
+        <div class="login-card">
+            <h2>Inventory Management</h2>
+            <p class="subtitle">Login to continue</p>
+
+            @if (TempData["LoginSuccess"] != null)
+            {
+                <div class="success-message" id="successMsg">
+                    ✅ @TempData["LoginSuccess"] Redirecting...
+                </div>
+                <script>
+                                setTimeout(function() {
+                                    window.location.href = '@Url.Action("Index", "Dashboard")';
+                                }, 2000);
+                </script>
+            }
+
+            @if (TempData["SignupSuccess"] != null)
+            {
+                <div class="success-message" style="background-color: #cce5ff; border-color: #b8daff; color: #004085;">
+                    ✅ @TempData["SignupSuccess"]
+                </div>
+            }
+
+            <div asp-validation-summary="All" class="validation-summary-errors"></div>
+
+            <form method="post" id="loginForm">
+                <div class="form-group">
+                    <label asp-for="Username"></label>
+                    <input asp-for="Username" placeholder="Enter Username" />
+                    <span asp-validation-for="Username" class="field-validation-error"></span>
+                </div>
+                <div class="form-group">
+                    <label asp-for="Password"></label>
+                    <input asp-for="Password" type="password" placeholder="Enter Password" />
+                    <span asp-validation-for="Password" class="field-validation-error"></span>
+                </div>
+                <button type="submit" class="btn-login">Login</button>
+            </form>
+
+            <div class="signup-link">
+                Don't have an account?
+                <a href="@Url.Action("Signup", "Account")">Create Account</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.5/jquery.validate.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validation-unobtrusive/3.2.13/jquery.validate.unobtrusive.min.js"></script>
+
+    <script>
+     
+        // // ✅ Prevent Back Button After Logout
+        // window.addEventListener('pageshow', function (event) {
+        // if (event.persisted) {
+        // // Page loaded from cache – force reload
+        // window.location.reload();
+        // }
+        // });
+
+        // // ✅ Push state to prevent back navigation
+        // history.pushState(null, null, location.href);
+        // window.onpopstate = function () {
+        // history.go(1);
+        // };
+    </script>
+</body>
+</html>

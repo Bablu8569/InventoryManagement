@@ -1,0 +1,38 @@
+﻿@model StockTransactionModel
+@{
+    ViewData["Title"] = "Stock Transaction";
+    var products = ViewBag.Products as List<ProductModel>;
+}
+<h2>Stock Transaction</h2>
+@if (TempData["Success"] != null)
+{
+    <div class="alert-success">@TempData["Success"]</div>
+}
+<form method="post">
+    <div class="form-group">
+        <label asp-for="ProductId"></label>
+        <select asp-for="ProductId" asp-items="@(new SelectList(products, "ProductId", "ProductName"))"><option value="">Select Product</option></select>
+        <span asp-validation-for="ProductId"></span>
+    </div>
+    <div class="form-group">
+        <label asp-for="TransactionType"></label>
+        <select asp-for="TransactionType"><option value="">Select Type</option><option value="IN">Stock In</option><option value="OUT">Stock Out</option></select>
+        <span asp-validation-for="TransactionType"></span>
+    </div>
+    <div class="form-group">
+        <label asp-for="Quantity"></label>
+        <input asp-for="Quantity" />
+        <span asp-validation-for="Quantity"></span>
+    </div>
+    <div class="form-group">
+        <label asp-for="Remarks"></label>
+        <textarea asp-for="Remarks" rows="3"></textarea>
+        <span asp-validation-for="Remarks"></span>
+    </div>
+    <button type="submit" class="btn btn-success">Process Transaction</button>
+    <a href="@Url.Action("Index", "Product")" class="btn btn-primary">Cancel</a>
+</form>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}
+</script>

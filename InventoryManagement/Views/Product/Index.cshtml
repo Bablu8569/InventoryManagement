@@ -1,0 +1,291 @@
+﻿@{
+    ViewData["Title"] = "Products";
+}
+
+<style>
+    .product-action-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+        padding: 5px 12px;
+        min-width: 68px;
+        height: 30px;
+        font-size: 12px;
+        font-weight: 500;
+        border-radius: 30px;
+        margin: 0 3px;
+        text-decoration: none;
+        cursor: pointer;
+        border: none;
+        transition: 0.2s;
+    }
+    .product-action-btn.edit-btn { background-color: #28a745; color: white; }
+    .product-action-btn.details-btn { background-color: #007bff; color: white; }
+    .product-action-btn.delete-btn { background-color: #dc3545; color: white; }
+    .product-action-btn:hover { transform: translateY(-1px); filter: brightness(0.92); }
+
+    .ag-cell.ag-cell-value[col-id="actions"] {
+        display: flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        gap: 5px;
+    }
+
+    .add-product-btn {
+        background-color: #28a745;
+        color: white;
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+        font-weight: bold;
+        text-decoration: none;
+        transition: 0.2s;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    .add-product-btn:hover {
+        background-color: #218838;
+        transform: scale(1.05);
+        text-decoration: none;
+        color: white;
+    }
+
+    #productGrid {
+        height: calc(100% - 80px);
+        width: 100%;
+    }
+</style>
+
+<h2>Products Management</h2>
+<input type="hidden" id="role" value="@Context.Session.GetString("Role")" />
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+
+<div style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 20px;">
+    @{
+        var role = Context.Session.GetString("Role");
+        // ✅ Admin (1) or Super User (3) can add
+        if (role == "1" || role == "3")
+        {
+            <a href="@Url.Action("Create")" class="add-product-btn" title="Add New Product">+</a>
+        }
+        else
+        {
+            // ❌ Normal user (2) – button hidden
+            <span style="font-size: 14px; color: #6c757d; font-weight: 500; padding: 5px 10px;">🔒 Access Denied</span>
+        }
+    }
+</div>
+
+<div id="productGrid" class="ag-theme-alpine"></div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/dist/ag-grid-community.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/styles/ag-grid.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/styles/ag-theme-alpine.css">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <script>
+        // ✅ Action cell renderer – Hide Edit/Delete for Normal User
+        class ActionCellRenderer {
+            init(params) {
+                const id = params.data.productId;
+                const role = document.getElementById("role").value;
+                const div = document.createElement('div');
+                div.style.display = 'flex';
+                div.style.justifyContent = 'center';
+                div.style.gap = '6px';
+
+                // ✅ Check if user is Normal User (Role = 2)
+                const isNormalUser = (role == "2");
+
+                // ---------- Edit Button ----------
+                const editBtn = document.createElement('a');
+                editBtn.className = 'product-action-btn edit-btn';
+                editBtn.innerHTML = '✏️ Edit';
+                
+                if (!isNormalUser) {
+                    editBtn.href = `/Product/Edit/${id}`;
+                } else {
+                    // ❌ Normal user – hide edit button
+                    editBtn.style.display = 'none';
+                }
+
+                // ---------- Details Button (always enabled) ----------
+                const detailsBtn = document.createElement('a');
+                detailsBtn.href = `/Product/Details/${id}`;
+                detailsBtn.className = 'product-action-btn details-btn';
+                detailsBtn.innerHTML = '🔍 Details';
+
+                // ---------- Delete Button ----------
+                const deleteBtn = document.createElement('button');
+                deleteBtn.className = 'product-action-btn delete-btn';
+                deleteBtn.innerHTML = '🗑️ Delete';
+                
+                if (!isNormalUser) {
+                    deleteBtn.onclick = () => {
+                        if (confirm('Delete this product?')) {
+                            $.ajax({
+                                url: '@Url.Action("Delete", "Product")',
+                                type: 'POST',
+                                data: { id: id },
+                                success: (res) => {
+                                    if (res.success) {
+                                        alert(res.message);
+                                        loadGridData();
+                                    } else {
+                                        alert(res.message);
+                                    }
+                                },
+                                error: () => alert('Error')
+                            });
+                        }
+                    };
+                } else {
+                    // ❌ Normal user – hide delete button
+                    deleteBtn.style.display = 'none';
+                }
+
+                div.append(editBtn, detailsBtn, deleteBtn);
+                this.eGui = div;
+            }
+            getGui() { return this.eGui; }
+        }
+
+        const columnDefs = [
+            { headerName: "ID", field: "productId", width: 80, filter: 'agTextColumnFilter', floatingFilter: true, sortable: true },
+            { headerName: "Product Name", field: "productName", width: 200, filter: 'agTextColumnFilter', floatingFilter: true, sortable: true },
+            { headerName: "Category", field: "categoryName", width: 150, filter: 'agTextColumnFilter', floatingFilter: true, sortable: true },
+            { headerName: "Price", field: "price", width: 120, filter: 'agNumberColumnFilter', floatingFilter: true, sortable: true, valueFormatter: (p) => `₹ ${p.value?.toFixed(2)}` },
+            { headerName: "Quantity", field: "quantity", width: 110, filter: 'agNumberColumnFilter', floatingFilter: true, sortable: true },
+            { headerName: "Created Date", field: "createdDate", width: 130, filter: 'agDateColumnFilter', floatingFilter: true, sortable: true, valueFormatter: (p) => p.value ? new Date(p.value).toLocaleDateString() : '' },
+            { headerName: "Actions", cellRenderer: ActionCellRenderer, pinned: 'right', width: 280, sortable: false, filter: false }
+        ];
+
+        const gridOptions = {
+            columnDefs: columnDefs,
+            defaultColDef: { sortable: true, resizable: true },
+            pagination: false,
+            rowSelection: 'single',
+            onGridReady: (params) => {
+                loadGridData();
+            }
+        };
+
+        function getUrlValue(name) {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get(name);
+        }
+
+        function loadGridData() {
+            $.ajax({
+                url: '@Url.Action("Search", "Product")',
+                type: 'GET',
+                data: { productName: '', categoryId: '' },
+                success: (res) => {
+                    if (res.success) {
+                        gridOptions.api.updateGridOptions({ rowData: res.data });
+                        
+                        let filterModel = {};
+
+                        // 1. Product Name
+                        const productName = getUrlValue("productName") || getUrlValue("search");
+                        if (productName) {
+                            filterModel.productName = {
+                                filterType: 'text',
+                                type: 'contains',
+                                filter: productName
+                            };
+                        }
+
+                        // 2. Category Name
+                        const categoryName = getUrlValue("categoryName");
+                        if (categoryName) {
+                            filterModel.categoryName = {
+                                filterType: 'text',
+                                type: 'contains',
+                                filter: categoryName
+                            };
+                        }
+
+                        // 3. Product ID
+                        const productId = getUrlValue("productId");
+                        if (productId && !isNaN(productId)) {
+                            filterModel.productId = {
+                                filterType: 'number',
+                                type: 'equals',
+                                filter: parseFloat(productId)
+                            };
+                        }
+
+                        // 4. Price range
+                        const minPrice = getUrlValue("minPrice");
+                        const maxPrice = getUrlValue("maxPrice");
+                        if (minPrice || maxPrice) {
+                            let priceFilter = { filterType: 'number', type: 'inRange' };
+                            if (minPrice && !isNaN(minPrice)) priceFilter.filter = parseFloat(minPrice);
+                            if (maxPrice && !isNaN(maxPrice)) priceFilter.filterTo = parseFloat(maxPrice);
+                            filterModel.price = priceFilter;
+                        }
+
+                        // 5. Quantity – EXACT MATCH
+                        const minQty = getUrlValue("minQuantity");
+                        const maxQty = getUrlValue("maxQuantity");
+                        const qtyValue = minQty || maxQty;
+                        
+                        if (qtyValue && !isNaN(qtyValue)) {
+                            filterModel.quantity = {
+                                filterType: 'number',
+                                type: 'equals',
+                                filter: parseInt(qtyValue)
+                            };
+                        }
+
+                        if (Object.keys(filterModel).length > 0) {
+                            gridOptions.api.setFilterModel(filterModel);
+                            gridOptions.api.onFilterChanged();
+                        }
+
+                        // Floating filter update
+                        if (qtyValue && !isNaN(qtyValue)) {
+                            setTimeout(function() {
+                                try {
+                                    gridOptions.api.getColumnFilterInstance('quantity', function(filterInstance) {
+                                        if (filterInstance) {
+                                            const model = {
+                                                filterType: 'number',
+                                                type: 'equals',
+                                                filter: parseInt(qtyValue)
+                                            };
+                                            filterInstance.setModel(model);
+                                            if (filterInstance.onFloatingFilterChanged) {
+                                                filterInstance.onFloatingFilterChanged('equals', parseInt(qtyValue));
+                                            }
+                                        }
+                                    });
+                                } catch(e) {
+                                    console.log('⚠️ Floating filter update error:', e.message);
+                                }
+                            }, 300);
+                        }
+
+                    } else {
+                        alert('Failed to load products');
+                    }
+                },
+                error: () => alert('Error loading products')
+            });
+        }
+
+        $(document).ready(() => {
+            const gridDiv = document.querySelector('#productGrid');
+            new agGrid.Grid(gridDiv, gridOptions);
+        });
+    </script>
+}

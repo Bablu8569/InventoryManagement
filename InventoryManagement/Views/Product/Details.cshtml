@@ -1,0 +1,276 @@
+﻿@model ProductModel
+@{
+    ViewData["Title"] = "Product Details";
+    var transactions = ViewBag.Transactions as List<StockTransactionModel>;
+    string stockStatus = Model.Quantity <= 5 ? "Low Stock" : (Model.Quantity <= 20 ? "Adequate" : "High");
+    string statusColor = Model.Quantity <= 5 ? "#dc2626" : (Model.Quantity <= 20 ? "#f59e0b" : "#10b981");
+}
+
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    body {
+        background: #f4f6fa;
+        font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    }
+
+    .details-wrapper {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+
+    /* Product info card */
+    .info-card {
+        background: white;
+        border-radius: 24px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+        margin-bottom: 28px;
+        overflow: hidden;
+        transition: 0.2s;
+    }
+
+    .info-header {
+        padding: 20px 28px;
+        background: #ffffff;
+        border-bottom: 1px solid #edf2f7;
+    }
+
+    .info-header h2 {
+        font-size: 1.8rem;
+        font-weight: 600;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: #0f172a;
+    }
+
+    .info-body {
+        padding: 24px 28px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 28px;
+    }
+
+    .info-field {
+        flex: 1;
+        min-width: 160px;
+    }
+
+    .field-label {
+        font-size: 0.7rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+        color: #5b6e8c;
+        margin-bottom: 6px;
+    }
+
+    .field-value {
+        font-size: 1.4rem;
+        font-weight: 600;
+        color: #0f172a;
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+    }
+
+    .stock-badge {
+        font-size: 0.75rem;
+        font-weight: 500;
+        padding: 4px 12px;
+        border-radius: 40px;
+        background: #f1f5f9;
+        color: #1e293b;
+    }
+
+    /* Transaction card */
+    .trans-card {
+        background: white;
+        border-radius: 24px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
+        overflow: hidden;
+    }
+
+    .trans-header {
+        padding: 18px 28px;
+        border-bottom: 1px solid #edf2f7;
+        background: white;
+    }
+
+    .trans-header h3 {
+        font-size: 1.3rem;
+        font-weight: 600;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        color: #0f172a;
+    }
+
+    .table-container {
+        overflow-x: auto;
+        padding: 0 0 20px 0;
+    }
+
+    .trans-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 0.85rem;
+        min-width: 500px;
+    }
+
+    .trans-table th {
+        text-align: left;
+        padding: 14px 20px;
+        background: #fafcff;
+        font-weight: 600;
+        color: #334155;
+        border-bottom: 1px solid #e2e8f0;
+    }
+
+    .trans-table td {
+        padding: 12px 20px;
+        border-bottom: 1px solid #f1f5f9;
+        vertical-align: middle;
+    }
+
+    .trans-table tr:hover td {
+        background: #fefce8;
+    }
+
+    .badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 5px;
+        padding: 4px 12px;
+        border-radius: 40px;
+        font-size: 0.7rem;
+        font-weight: 600;
+    }
+    .badge-in { background: #dcfce7; color: #166534; }
+    .badge-out { background: #fee2e2; color: #991b1b; }
+
+    .empty-state {
+        text-align: center;
+        padding: 48px;
+        color: #6c757d;
+        font-size: 0.9rem;
+    }
+
+    .back-button {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 28px;
+        padding: 8px 24px;
+        background: white;
+        border: 1px solid #cbd5e1;
+        border-radius: 40px;
+        text-decoration: none;
+        color: #1e293b;
+        font-weight: 500;
+        transition: 0.2s;
+    }
+
+    .back-button:hover {
+        background: #f1f5f9;
+        transform: translateX(-3px);
+        border-color: #94a3b8;
+    }
+
+    @@media (max-width: 640px) {
+        .info-header h2 { font-size: 1.4rem; }
+        .field-value { font-size: 1.2rem; }
+        .info-body { padding: 20px; gap: 16px; flex-direction: column; }
+        .trans-header h3 { font-size: 1.2rem; }
+        .trans-header { padding: 14px 20px; }
+        .trans-table th, .trans-table td { padding: 10px 16px; }
+    }
+</style>
+
+<div class="details-wrapper">
+    <!-- Product Information -->
+    <div class="info-card">
+        <div class="info-header">
+            <h2>
+                <span>📦</span> @Model.ProductName
+            </h2>
+        </div>
+        <div class="info-body">
+            <div class="info-field">
+                <div class="field-label">Category</div>
+                <div class="field-value">@Model.CategoryName</div>
+            </div>
+            <div class="info-field">
+                <div class="field-label">Price</div>
+                <div class="field-value">₹ @Model.Price.ToString("N2")</div>
+            </div>
+            <div class="info-field">
+                <div class="field-label">Stock</div>
+                <div class="field-value">
+                    @Model.Quantity units
+                    <span class="stock-badge" style="background: @(statusColor)15; color: @statusColor;">
+                        @stockStatus
+                    </span>
+                </div>
+            </div>
+            <div class="info-field">
+                <div class="field-label">Created</div>
+                <div class="field-value">@Model.CreatedDate.ToString("dd MMM yyyy")</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Stock Transactions -->
+    <div class="trans-card">
+        <div class="trans-header">
+            <h3>
+                <span>📋</span> Stock Movement History
+            </h3>
+        </div>
+        <div class="table-container">
+            <table class="trans-table">
+                <thead>
+                    <tr><th>Date & Time</th><th>Type</th><th>Quantity</th><th>Remarks</th></tr>
+                </thead>
+                <tbody>
+                    @if (transactions != null && transactions.Any())
+                    {
+                        foreach (var trans in transactions)
+                        {
+                            <tr>
+                                <td>@trans.TransactionDate.ToString("dd MMM yyyy, hh:mm tt")</td>
+                                <td>
+                                    @if (trans.TransactionType == "IN")
+                                    {
+                                        <span class="badge badge-in">➕ IN</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge badge-out">➖ OUT</span>
+                                    }
+                                 </td>
+                                <td>@trans.Quantity</td>
+                                <td>@(string.IsNullOrEmpty(trans.Remarks) ? "—" : trans.Remarks)</td>
+                            </tr>
+                        }
+                    }
+                    else
+                    {
+                        <tr><td colspan="4" class="empty-state">📭 No stock transactions recorded for this product.</td></tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <a href="@Url.Action("Index")" class="back-button">
+        ← Back to Products
+    </a>
+</div>
