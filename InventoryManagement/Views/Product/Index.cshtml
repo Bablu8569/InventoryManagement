@@ -3,6 +3,55 @@
 }
 
 <style>
+    /* ✅ Page level scroll - only one scroll bar */
+    html, body {
+        overflow-y: auto !important;
+        overflow-x: hidden !important;
+        height: 100%;
+        margin: 0;
+        padding: 0;
+    }
+
+    /* ✅ Main content - scroll with page */
+    .main-content {
+        min-height: 100vh;
+        overflow-y: visible !important;
+        overflow-x: hidden !important;
+        padding: 15px 20px;
+    }
+
+    /* ✅ Container - no extra scroll */
+    .container-fluid {
+        overflow: visible !important;
+        padding: 0 15px;
+        width: 100%;
+    }
+
+    /* ✅ Product grid wrapper - takes full available height */
+    .product-grid-wrapper {
+        height: 500px;  /* Fixed height for AG Grid */
+        width: 100%;
+        overflow: hidden !important;
+        position: relative;
+    }
+
+    /* ✅ AG Grid - scroll inside grid only */
+    #productGrid {
+        height: 100%;
+        width: 100%;
+    }
+
+    /* ✅ AG Grid - scroll bars inside grid */
+    .ag-theme-alpine .ag-body-viewport {
+        overflow-y: auto !important;
+        overflow-x: auto !important;
+    }
+
+    /* ✅ Remove any extra scroll from AG Grid containers */
+    .ag-theme-alpine .ag-root-wrapper {
+        overflow: hidden !important;
+    }
+
     .product-action-btn {
         display: inline-flex;
         align-items: center;
@@ -54,36 +103,63 @@
         color: white;
     }
 
-    #productGrid {
-        height: calc(100% - 80px);
-        width: 100%;
+    /* ✅ Header - fixed height */
+    .page-header {
+        height: 60px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .page-header h2 {
+        margin: 0;
+        font-size: 1.5rem;
+    }
+
+    .alert {
+        margin-bottom: 8px;
+        padding: 8px 15px;
+    }
+
+    /* ✅ Bottom padding for page scroll */
+    .page-footer {
+        height: 20px;
     }
 </style>
 
-<h2>Products Management</h2>
-<input type="hidden" id="role" value="@Context.Session.GetString("Role")" />
-@if (TempData["Success"] != null)
-{
-    <div class="alert alert-success">@TempData["Success"]</div>
-}
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="page-header">
+        <h2>Products Management</h2>
+        <input type="hidden" id="role" value="@Context.Session.GetString("Role")" />
+        <div>
+            @{
+                var role = Context.Session.GetString("Role");
+                if (role == "1" || role == "3")
+                {
+                    <a href="@Url.Action("Create")" class="add-product-btn" title="Add New Product">+</a>
+                }
+                else
+                {
+                    <span style="font-size: 14px; color: #6c757d; font-weight: 500; padding: 5px 10px;">🔒 Access Denied</span>
+                }
+            }
+        </div>
+    </div>
 
-<div style="display: flex; justify-content: flex-end; align-items: center; margin-bottom: 20px;">
-    @{
-        var role = Context.Session.GetString("Role");
-        // ✅ Admin (1) or Super User (3) can add
-        if (role == "1" || role == "3")
-        {
-            <a href="@Url.Action("Create")" class="add-product-btn" title="Add New Product">+</a>
-        }
-        else
-        {
-            // ❌ Normal user (2) – button hidden
-            <span style="font-size: 14px; color: #6c757d; font-weight: 500; padding: 5px 10px;">🔒 Access Denied</span>
-        }
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success">@TempData["Success"]</div>
     }
-</div>
 
-<div id="productGrid" class="ag-theme-alpine"></div>
+    <!-- ✅ Grid Wrapper -->
+    <div class="product-grid-wrapper">
+        <div id="productGrid" class="ag-theme-alpine"></div>
+    </div>
+
+    <!-- ✅ Small footer space for scroll -->
+    <div class="page-footer"></div>
+</div>
 
 @section Scripts {
     <script src="https://cdn.jsdelivr.net/npm/ag-grid-community@31.3.2/dist/ag-grid-community.min.js"></script>
@@ -113,7 +189,6 @@
                 if (!isNormalUser) {
                     editBtn.href = `/Product/Edit/${id}`;
                 } else {
-                    // ❌ Normal user – hide edit button
                     editBtn.style.display = 'none';
                 }
 
@@ -148,7 +223,6 @@
                         }
                     };
                 } else {
-                    // ❌ Normal user – hide delete button
                     deleteBtn.style.display = 'none';
                 }
 
@@ -286,6 +360,13 @@
         $(document).ready(() => {
             const gridDiv = document.querySelector('#productGrid');
             new agGrid.Grid(gridDiv, gridOptions);
+            
+            // ✅ Handle window resize
+            window.addEventListener('resize', function() {
+                if (gridOptions.api) {
+                    gridOptions.api.sizeColumnsToFit();
+                }
+            });
         });
     </script>
 }

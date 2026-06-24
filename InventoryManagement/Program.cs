@@ -1,4 +1,5 @@
 using InventoryManagement.Helpers;
+using InventoryManagement.Repositories;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -16,6 +17,7 @@ builder.Services.AddSession(options =>
 // Dependency Injection
 builder.Services.AddSingleton<IConfiguration>(builder.Configuration);
 builder.Services.AddScoped<DatabaseHelper>();
+builder.Services.AddScoped<IStockRepository,StockRepository>();
 
 var app = builder.Build();
 

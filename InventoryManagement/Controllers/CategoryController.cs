@@ -28,8 +28,7 @@ namespace InventoryManagement.Controllers
             if (!IsUserLoggedIn())
                 return RedirectToAction("Login", "Account");
 
-            var categories =
-                CategoryModel.GetAll(_db, search);
+            var categories = CategoryModel.GetAll(_db, search);
 
             ViewBag.Search = search;
 
@@ -43,8 +42,7 @@ namespace InventoryManagement.Controllers
         {
             if (!IsUserLoggedIn())
                 return RedirectToAction("Login", "Account");
-
-            return View();
+                return View();
         }
 
         // ================= CREATE POST =================
@@ -62,18 +60,12 @@ namespace InventoryManagement.Controllers
             string message = model.Insert(_db);
             if (message == "Category added successfully.")
             {
-                TempData["Success"] =
-                    message;
-
+                TempData["Success"] = message;
                 return RedirectToAction("Index");
                      
-                
             }
 
-            ModelState.AddModelError(
-                "",
-                message
-            );
+            ModelState.AddModelError("", message);
 
             return View(model);
         }
@@ -86,55 +78,41 @@ namespace InventoryManagement.Controllers
             if (!IsUserLoggedIn())
                 return RedirectToAction("Login", "Account");
 
-            var category =
-                     CategoryModel.GetById(
-                    _db,
-                    id
-                );
+            var category = CategoryModel.GetById(_db, id);
 
             if (category == null)
-                return RedirectToAction(
-                    "Index"
-                );
+                return RedirectToAction("Index");
 
-            return View(category);
+                return View(category);
         }
 
         // ================= EDIT POST =================
 
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Edit(
-            CategoryModel model
-        )
+        public IActionResult Edit(CategoryModel model)
+       
         {
             if (!IsUserLoggedIn())
-                return RedirectToAction(
-                    "Login",
-                    "Account"
-                );
+                return RedirectToAction("Login", "Account");
 
-            if (!ModelState.IsValid)
-                return View(model);
+                    if (!ModelState.IsValid)
+                           return View(model);
 
-            string message =
-                model.Update(_db);
+            string message = model.Update(_db);
+
 
             if (message == "Category updated successfully.")
             {
-                TempData["Success"] =
-                    message;
+                TempData["Success"] = message;
 
-                return RedirectToAction(
-                    "Index"
-                );
+
+                return RedirectToAction("Index");
+
+                
             }
 
-            ModelState.AddModelError(
-                "",
-                message
-            );
-
+            ModelState.AddModelError("", message);
             return View(model);
         }
 
@@ -147,10 +125,9 @@ namespace InventoryManagement.Controllers
             {
                 return Json(new
                 {
-                    success = false,
+                 
+                   message = "Session expired. Please login again."
 
-                    message =
-                    "Session expired. Please login again."
                 });
             }
 

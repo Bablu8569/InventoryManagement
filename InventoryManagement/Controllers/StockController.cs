@@ -1,4 +1,5 @@
 ﻿using InventoryManagement.Models;
+using InventoryManagement.Repositories;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
@@ -11,62 +12,57 @@ namespace InventoryManagement.Controllers
     public class StockController : Controller
     {
         private readonly IConfiguration _configuration;
+        private readonly IStockRepository _stockRepository;
 
-        public StockController(IConfiguration configuration)
+        public StockController(
+            IConfiguration configuration,
+            IStockRepository stockRepository
+        )
         {
             _configuration = configuration;
+            _stockRepository = stockRepository;
         }
 
         // ========== HELPER METHODS ==========
         private bool IsUserLoggedIn()
         {
-            return !string.IsNullOrEmpty(HttpContext.Session.GetString("Username"));
+            return !string.IsNullOrEmpty(
+                HttpContext.Session.GetString("Username")
+            );
         }
 
         private bool CanAddTransaction()
         {
-            var role = HttpContext.Session.GetString("Role");
+            var role =
+                HttpContext.Session.GetString("Role");
+
             return role == "1" || role == "3"; // Admin (1) or Super User (3)
         }
 
         // ========== TRANSACTION HISTORY ==========
-        public IActionResult Index(DateTime? fromDate, DateTime? toDate)
+        public IActionResult Index(
+            DateTime? fromDate,
+            DateTime? toDate
+        )
         {
             if (!IsUserLoggedIn())
-                return RedirectToAction("Login", "Account");
+                return RedirectToAction(
+                    "Login",
+                    "Account"
+                );
 
-            var transactions = new List<StockTransactionModel>();
-            string connStr = _configuration.GetConnectionString("DefaultConnection");
+            var transactions =
+                _stockRepository.GetStockTransactions(
+                    fromDate,
+                    toDate
+                );
 
-            using (SqlConnection conn = new SqlConnection(connStr))
-            {
-                conn.Open();
-                using (SqlCommand cmd = new SqlCommand("USP_GetStockTransactions", conn))
-                {
-                    cmd.CommandType = CommandType.StoredProcedure;
-                    cmd.Parameters.AddWithValue("@FromDate", (object)fromDate ?? DBNull.Value);
-                    cmd.Parameters.AddWithValue("@ToDate", (object)toDate ?? DBNull.Value);
+            ViewBag.FromDate =
+                fromDate?.ToString("yyyy-MM-dd");
 
-                    using (SqlDataReader reader = cmd.ExecuteReader())
-                    {
-                        while (reader.Read())
-                        {
-                            transactions.Add(new StockTransactionModel
-                            {
-                                TransactionId = Convert.ToInt32(reader["TransactionId"]),
-                                ProductId = Convert.ToInt32(reader["ProductId"]),
-                                Quantity = Convert.ToInt32(reader["Quantity"]),
-                                TransactionType = reader["TransactionType"].ToString() ?? "",
-                                TransactionDate = Convert.ToDateTime(reader["TransactionDate"]),
-                                ProductName = reader["ProductName"].ToString() ?? ""
-                            });
-                        }
-                    }
-                }
-            }
+            ViewBag.ToDate =
+                toDate?.ToString("yyyy-MM-dd");
 
-            ViewBag.FromDate = fromDate?.ToString("yyyy-MM-dd");
-            ViewBag.ToDate = toDate?.ToString("yyyy-MM-dd");
             return View(transactions);
         }
 
@@ -75,92 +71,192 @@ namespace InventoryManagement.Controllers
         public IActionResult Create()
         {
             if (!IsUserLoggedIn())
-                return RedirectToAction("Login", "Account");
+                return RedirectToAction(
+                    "Login",
+                    "Account"
+                );
 
             // ✅ Admin (1) ya Super User (3) ko access
             if (!CanAddTransaction())
             {
-                TempData["Error"] = "Access Denied. Only Admin and Super User can add stock transactions.";
-                return RedirectToAction("Index", "Dashboard");
+                TempData["Error"] =
+                    "Access Denied. Only Admin and Super User can add stock transactions.";
+
+                return RedirectToAction(
+                    "Index",
+                    "Dashboard"
+                );
             }
 
             var products = GetProductList();
             ViewBag.Products = products;
+
             return View();
         }
 
         // ========== CREATE TRANSACTION (POST) ==========
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Create(StockEntryModel model)
+        public IActionResult Create(
+            StockEntryModel model
+        )
         {
             if (!IsUserLoggedIn())
-                return RedirectToAction("Login", "Account");
+                return RedirectToAction(
+                    "Login",
+                    "Account"
+                );
 
             // ✅ Admin (1) ya Super User (3) ko access
             if (!CanAddTransaction())
             {
-                TempData["Error"] = "Access Denied. Only Admin and Super User can add stock transactions.";
-                return RedirectToAction("Index", "Dashboard");
+                TempData["Error"] =
+                    "Access Denied. Only Admin and Super User can add stock transactions.";
+
+                return RedirectToAction(
+                    "Index",
+                    "Dashboard"
+                );
             }
 
             if (ModelState.IsValid)
             {
                 try
                 {
-                    string connStr = _configuration.GetConnectionString("DefaultConnection");
-                    using (SqlConnection conn = new SqlConnection(connStr))
+                    string connStr =
+                        _configuration.GetConnectionString(
+                            "DefaultConnection"
+                        );
+
+                    using (
+                        SqlConnection conn =
+                            new SqlConnection(connStr)
+                    )
                     {
                         conn.Open();
 
-                        // ✅ Check stock for "Out" transaction
+                        // ✅ Check stock for "Out" transaction (Stored Procedure)
                         if (model.TransactionType == "Out")
                         {
-                            string checkSql = "SELECT Quantity FROM Products WHERE ProductId = @ProductId";
-                            SqlCommand checkCmd = new SqlCommand(checkSql, conn);
-                            checkCmd.Parameters.AddWithValue("@ProductId", model.ProductId);
-                            int currentStock = (int)checkCmd.ExecuteScalar();
-
-                            if (currentStock < model.Quantity)
+                            using (
+                                SqlCommand checkCmd =
+                                    new SqlCommand(
+                                        "USP_CheckStock",
+                                        conn
+                                    )
+                            )
                             {
-                                ModelState.AddModelError("", "Insufficient stock! Available stock: " + currentStock);
-                                ViewBag.Products = GetProductList();
-                                return View(model);
+                                checkCmd.CommandType =
+                                    CommandType.StoredProcedure;
+
+                                checkCmd.Parameters.AddWithValue(
+                                    "@ProductId",
+                                    model.ProductId
+                                );
+
+                                int currentStock =
+                                    (int)checkCmd.ExecuteScalar();
+
+                                if (currentStock < model.Quantity)
+                                {
+                                    ModelState.AddModelError(
+                                        "",
+                                        "Insufficient stock! Available stock: "
+                                        + currentStock
+                                    );
+
+                                    ViewBag.Products =
+                                        GetProductList();
+
+                                    return View(model);
+                                }
                             }
                         }
 
-                        // ✅ Update product quantity
-                        string updateSql = (model.TransactionType == "In")
-                            ? "UPDATE Products SET Quantity = Quantity + @Qty WHERE ProductId = @ProductId"
-                            : "UPDATE Products SET Quantity = Quantity - @Qty WHERE ProductId = @ProductId";
+                        // ✅ Update product quantity (Stored Procedure)
+                        using (
+                            SqlCommand updateCmd =
+                                new SqlCommand(
+                                    "USP_UpdateProductStock",
+                                    conn
+                                )
+                        )
+                        {
+                            updateCmd.CommandType =
+                                CommandType.StoredProcedure;
 
-                        SqlCommand updateCmd = new SqlCommand(updateSql, conn);
-                        updateCmd.Parameters.AddWithValue("@Qty", model.Quantity);
-                        updateCmd.Parameters.AddWithValue("@ProductId", model.ProductId);
-                        updateCmd.ExecuteNonQuery();
+                            updateCmd.Parameters.AddWithValue(
+                                "@ProductId",
+                                model.ProductId
+                            );
 
-                        // ✅ Insert transaction record
-                        string insertSql = @"
-                            INSERT INTO StockTransactions (ProductId, Quantity, TransactionType, TransactionDate)
-                            VALUES (@ProductId, @Qty, @Type, @Date)";
-                        SqlCommand insertCmd = new SqlCommand(insertSql, conn);
-                        insertCmd.Parameters.AddWithValue("@ProductId", model.ProductId);
-                        insertCmd.Parameters.AddWithValue("@Qty", model.Quantity);
-                        insertCmd.Parameters.AddWithValue("@Type", model.TransactionType);
-                        insertCmd.Parameters.AddWithValue("@Date", DateTime.Now);
-                        insertCmd.ExecuteNonQuery();
+                            updateCmd.Parameters.AddWithValue(
+                                "@Quantity",
+                                model.Quantity
+                            );
+
+                            updateCmd.Parameters.AddWithValue(
+                                "@TransactionType",
+                                model.TransactionType
+                            );
+
+                            updateCmd.ExecuteNonQuery();
+                        }
+
+                        // ✅ Insert transaction record (Stored Procedure)
+                        using (
+                            SqlCommand insertCmd =
+                                new SqlCommand(
+                                    "USP_InsertStockTransaction",
+                                    conn
+                                )
+                        )
+                        {
+                            insertCmd.CommandType =
+                                CommandType.StoredProcedure;
+
+                            insertCmd.Parameters.AddWithValue(
+                                "@ProductId",
+                                model.ProductId
+                            );
+
+                            insertCmd.Parameters.AddWithValue(
+                                "@Quantity",
+                                model.Quantity
+                            );
+
+                            insertCmd.Parameters.AddWithValue(
+                                "@TransactionType",
+                                model.TransactionType
+                            );
+
+                            insertCmd.Parameters.AddWithValue(
+                                "@TransactionDate",
+                                DateTime.Now
+                            );
+
+                            insertCmd.ExecuteNonQuery();
+                        }
                     }
 
-                    TempData["Success"] = $"Stock {model.TransactionType} successful! Quantity: {model.Quantity}";
+                    TempData["Success"] =
+                        $"Stock {model.TransactionType} successful! Quantity: {model.Quantity}";
+
                     return RedirectToAction("Index");
                 }
                 catch (SqlException ex)
                 {
-                    ModelState.AddModelError("", "Database error: " + ex.Message);
+                    ModelState.AddModelError(
+                        "",
+                        "Database error: " + ex.Message
+                    );
                 }
                 catch (Exception ex)
                 {
-                    ModelState.AddModelError("", "Error: " + ex.Message);
+                    ModelState.AddModelError(
+                        "",
+                        "Error: " + ex.Message
+                    );
                 }
             }
 
@@ -168,31 +264,65 @@ namespace InventoryManagement.Controllers
             return View(model);
         }
 
-        // ========== GET PRODUCT LIST ==========
+        // ========== GET PRODUCT LIST (Stored Procedure) ==========
         private List<ProductModel> GetProductList()
         {
             var products = new List<ProductModel>();
-            string connStr = _configuration.GetConnectionString("DefaultConnection");
-            using (SqlConnection conn = new SqlConnection(connStr))
+
+            string connStr =
+                _configuration.GetConnectionString(
+                    "DefaultConnection"
+                );
+
+            using (
+                SqlConnection conn =
+                    new SqlConnection(connStr)
+            )
             {
                 conn.Open();
-                using (SqlCommand cmd = new SqlCommand("USP_GetProductsForStock", conn))
+
+                using (
+                    SqlCommand cmd =
+                        new SqlCommand(
+                            "USP_GetProductsForStock",
+                            conn
+                        )
+                )
                 {
-                    cmd.CommandType = CommandType.StoredProcedure;
-                    using (SqlDataReader reader = cmd.ExecuteReader())
+                    cmd.CommandType =
+                        CommandType.StoredProcedure;
+
+                    using (
+                        SqlDataReader reader =
+                            cmd.ExecuteReader()
+                    )
                     {
                         while (reader.Read())
                         {
-                            products.Add(new ProductModel
-                            {
-                                ProductId = Convert.ToInt32(reader["ProductId"]),
-                                ProductName = reader["ProductName"].ToString() ?? "",
-                                Quantity = Convert.ToInt32(reader["Quantity"])
-                            });
+                            products.Add(
+                                new ProductModel
+                                {
+                                    ProductId =
+                                        Convert.ToInt32(
+                                        reader["ProductId"]
+                                        ),
+
+                                    ProductName =
+                                        reader["ProductName"]
+                                        .ToString()
+                                        ?? "",
+
+                                    Quantity =
+                                        Convert.ToInt32(
+                                        reader["Quantity"]
+                                        )
+                                }
+                            );
                         }
                     }
                 }
             }
+
             return products;
         }
     }
