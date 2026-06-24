@@ -72,6 +72,57 @@
     }
     .close-alert { background: none; border: none; font-size: 1.2rem; font-weight: bold; cursor: pointer; color: #155724; }
     @@media (max-width: 768px) { .chart-board { grid-template-columns: 1fr; } .dashboard-stats { grid-template-columns: repeat(2, 1fr); } }
+
+     /* ===== iPad Pro (1024px - 1366px) ===== */
+    @@media (min-width: 1024px) and (max-width: 1366px) {
+        .dashboard-stats {
+            grid-template-columns: repeat(4, 1fr) !important;
+            gap: 15px !important;
+        }
+        .stat-card .number {
+            font-size: 28px !important;
+        }
+        .chart-board {
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 25px !important;
+        }
+        canvas {
+            max-height: 280px !important;
+        }
+    }
+
+    /* ===== iPad Portrait Mode ===== */
+    @@media (min-width: 768px) and (max-width: 1024px) and (orientation: portrait) {
+        .dashboard-stats {
+            grid-template-columns: repeat(2, 1fr) !important;
+        }
+        .chart-board {
+            grid-template-columns: 1fr 1fr !important;
+        }
+        .stat-card .number {
+            font-size: 24px !important;
+        }
+        canvas {
+            max-height: 220px !important;
+        }
+    }
+
+    /* ===== iPad Landscape Mode ===== */
+    @@media (min-width: 768px) and (max-width: 1024px) and (orientation: landscape) {
+        .dashboard-stats {
+            grid-template-columns: repeat(4, 1fr) !important;
+        }
+        .chart-board {
+            grid-template-columns: repeat(2, 1fr) !important;
+        }
+        .stat-card .number {
+            font-size: 28px !important;
+        }
+        canvas {
+            max-height: 250px !important;
+        }
+    }
+
 </style>
 
 <h2>Dashboard</h2>

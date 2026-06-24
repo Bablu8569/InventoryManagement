@@ -3,12 +3,6 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-   @*  <!-- ✅ Cache Disable Meta Tags -->
-    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-    <meta http-equiv="Pragma" content="no-cache" />
-    <meta http-equiv="Expires" content="0" /> *@
-
     <title>@ViewData["Title"] - Inventory Management</title>
 
     <!-- Bootstrap Icons -->
@@ -110,32 +104,6 @@
     </div>
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
- @*    <!-- ✅ Disable Back Button After Logout -->
-    <script>
-        // 1. When page loads from cache, force reload or redirect to login
-        window.addEventListener('pageshow', function (event) {
-        if (event.persisted) {
-        var isLoggedIn = '@(!string.IsNullOrEmpty(Context.Session.GetString("Username")))';
-        if (isLoggedIn === 'False') {
-        window.location.href = '@Url.Action("Login", "Account")';
-        } else {
-        window.location.reload();
-        }
-        }
-        });
-
-        // 2. Prevent back navigation to cached pages
-        history.pushState(null, null, location.href);
-        window.onpopstate = function () {
-        var isLoggedIn = '@(!string.IsNullOrEmpty(Context.Session.GetString("Username")))';
-        if (isLoggedIn === 'False') {
-        window.location.href = '@Url.Action("Login", "Account")';
-        } else {
-        history.go(1);
-        }
-        };
-    </script> *@
 
     @await RenderSectionAsync("Scripts", required: false)
 </body>

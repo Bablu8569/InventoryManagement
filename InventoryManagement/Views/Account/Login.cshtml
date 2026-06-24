@@ -8,12 +8,6 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
-    <!-- ✅ Cache Disable Meta Tags -->
-   @*  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
-    <meta http-equiv="Pragma" content="no-cache" />
-    <meta http-equiv="Expires" content="0" /> *@
-
     <title>Login - Inventory Management</title>
     <link rel="stylesheet" href="~/css/login.css" />
 
@@ -109,20 +103,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validation-unobtrusive/3.2.13/jquery.validate.unobtrusive.min.js"></script>
 
     <script>
-     
-        // // ✅ Prevent Back Button After Logout
-        // window.addEventListener('pageshow', function (event) {
-        // if (event.persisted) {
-        // // Page loaded from cache – force reload
-        // window.location.reload();
-        // }
-        // });
 
-        // // ✅ Push state to prevent back navigation
-        // history.pushState(null, null, location.href);
-        // window.onpopstate = function () {
-        // history.go(1);
-        // };
     </script>
 </body>
 </html>

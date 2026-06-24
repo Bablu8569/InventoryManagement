@@ -3,6 +3,7 @@ using Microsoft.Data.SqlClient;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Data;
 
 namespace InventoryManagement.Models
@@ -58,10 +59,6 @@ namespace InventoryManagement.Models
                 { "@Password", password },
                 { "@ConfirmPassword", confirmPassword }
             };
-
-            // Execute stored procedure with output parameter
-            // Since DatabaseHelper doesn't have ExecuteNonQueryWithOutput,
-            // we need to use a different approach
             try
             {
                 string connStr = db.GetConnection().ConnectionString;
