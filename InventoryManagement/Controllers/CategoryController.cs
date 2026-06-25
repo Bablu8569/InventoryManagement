@@ -42,7 +42,7 @@ namespace InventoryManagement.Controllers
         {
             if (!IsUserLoggedIn())
                 return RedirectToAction("Login", "Account");
-                return View();
+            return View();
         }
 
         // ================= CREATE POST =================
@@ -62,7 +62,7 @@ namespace InventoryManagement.Controllers
             {
                 TempData["Success"] = message;
                 return RedirectToAction("Index");
-                     
+
             }
 
             ModelState.AddModelError("", message);
@@ -83,7 +83,7 @@ namespace InventoryManagement.Controllers
             if (category == null)
                 return RedirectToAction("Index");
 
-                return View(category);
+            return View(category);
         }
 
         // ================= EDIT POST =================
@@ -91,13 +91,13 @@ namespace InventoryManagement.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult Edit(CategoryModel model)
-       
+
         {
             if (!IsUserLoggedIn())
                 return RedirectToAction("Login", "Account");
 
-                    if (!ModelState.IsValid)
-                           return View(model);
+            if (!ModelState.IsValid)
+                return View(model);
 
             string message = model.Update(_db);
 
@@ -109,7 +109,7 @@ namespace InventoryManagement.Controllers
 
                 return RedirectToAction("Index");
 
-                
+
             }
 
             ModelState.AddModelError("", message);
@@ -125,8 +125,8 @@ namespace InventoryManagement.Controllers
             {
                 return Json(new
                 {
-                 
-                   message = "Session expired. Please login again."
+
+                    message = "Session expired. Please login again."
 
                 });
             }
