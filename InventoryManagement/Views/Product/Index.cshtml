@@ -3,7 +3,7 @@
 }
 
 <style>
-    /* ✅ Page level scroll - only one scroll bar */
+    /* Page level scroll - only one scroll bar */
     html, body {
         overflow-y: auto !important;
         overflow-x: hidden !important;
@@ -12,7 +12,7 @@
         padding: 0;
     }
 
-    /* ✅ Main content - scroll with page */
+    /* Main content - scroll with page */
     .main-content {
         min-height: 100vh;
         overflow-y: visible !important;
@@ -20,34 +20,34 @@
         padding: 15px 20px;
     }
 
-    /* ✅ Container - no extra scroll */
+    /* Container - no extra scroll */
     .container-fluid {
         overflow: visible !important;
         padding: 0 15px;
         width: 100%;
     }
 
-    /* ✅ Product grid wrapper - takes full available height */
+    /* Product grid wrapper - takes full available height */
     .product-grid-wrapper {
-        height: 500px;  /* Fixed height for AG Grid */
+        height: 500px;
         width: 100%;
         overflow: hidden !important;
         position: relative;
     }
 
-    /* ✅ AG Grid - scroll inside grid only */
+    /* AG Grid - scroll inside grid only */
     #productGrid {
         height: 100%;
         width: 100%;
     }
 
-    /* ✅ AG Grid - scroll bars inside grid */
+    /* AG Grid - scroll bars inside grid */
     .ag-theme-alpine .ag-body-viewport {
         overflow-y: auto !important;
         overflow-x: auto !important;
     }
 
-    /* ✅ Remove any extra scroll from AG Grid containers */
+    /* Remove any extra scroll from AG Grid containers */
     .ag-theme-alpine .ag-root-wrapper {
         overflow: hidden !important;
     }
@@ -103,12 +103,14 @@
         color: white;
     }
 
-    /* ✅ Header - fixed height */
+    /* Header - fixed height */
     .page-header {
         height: 60px;
         display: flex;
         justify-content: space-between;
         align-items: center;
+        flex-wrap: wrap;
+        gap: 10px;
     }
 
     .page-header h2 {
@@ -121,18 +123,55 @@
         padding: 8px 15px;
     }
 
-    /* ✅ Bottom padding for page scroll */
+    /* Bottom padding for page scroll */
     .page-footer {
         height: 20px;
     }
+
+    /* Export Button Style */
+    .btn-export {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 8px 16px;
+        background-color: #28a745;
+        color: white;
+        border-radius: 6px;
+        text-decoration: none;
+        font-weight: 500;
+        font-size: 14px;
+        transition: 0.2s;
+        border: none;
+        cursor: pointer;
+        margin-right: 10px;
+    }
+
+    .btn-export:hover {
+        background-color: #218838;
+        text-decoration: none;
+        color: white;
+        transform: scale(1.02);
+    }
+
+    .header-actions {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
 </style>
 
+<!-- ✅ Main Container -->
 <div class="container-fluid">
     <!-- Header -->
     <div class="page-header">
         <h2>Products Management</h2>
         <input type="hidden" id="role" value="@Context.Session.GetString("Role")" />
-        <div>
+        <div class="header-actions">
+            <!-- Export CSV Button -->
+            <a href="@Url.Action("ExportCsv")" class="btn-export">
+                📥 Export CSV
+            </a>
+            
             @{
                 var role = Context.Session.GetString("Role");
                 if (role == "1" || role == "3")
@@ -149,15 +188,15 @@
 
     @if (TempData["Success"] != null)
     {
-        <div class="alert alert-success">@TempData["Success"]</div>
+        <div class="alert alert-success">✅ @TempData["Success"]</div>
     }
 
-    <!-- ✅ Grid Wrapper -->
+    <!-- Grid Wrapper -->
     <div class="product-grid-wrapper">
         <div id="productGrid" class="ag-theme-alpine"></div>
     </div>
 
-    <!-- ✅ Small footer space for scroll -->
+    <!-- Small footer space for scroll -->
     <div class="page-footer"></div>
 </div>
 
@@ -168,7 +207,7 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
     <script>
-        // ✅ Action cell renderer – Hide Edit/Delete for Normal User
+        // Action cell renderer – Hide Edit/Delete for Normal User
         class ActionCellRenderer {
             init(params) {
                 const id = params.data.productId;
@@ -178,7 +217,7 @@
                 div.style.justifyContent = 'center';
                 div.style.gap = '6px';
 
-                // ✅ Check if user is Normal User (Role = 2)
+                // Check if user is Normal User (Role = 2)
                 const isNormalUser = (role == "2");
 
                 // ---------- Edit Button ----------
@@ -361,7 +400,7 @@
             const gridDiv = document.querySelector('#productGrid');
             new agGrid.Grid(gridDiv, gridOptions);
             
-            // ✅ Handle window resize
+            // Handle window resize
             window.addEventListener('resize', function() {
                 if (gridOptions.api) {
                     gridOptions.api.sizeColumnsToFit();

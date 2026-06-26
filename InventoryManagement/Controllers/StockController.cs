@@ -1,4 +1,5 @@
-﻿using InventoryManagement.Models;
+﻿using InventoryManagement.Helpers;
+using InventoryManagement.Models;
 using InventoryManagement.Repositories;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
@@ -6,6 +7,7 @@ using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Text;
 
 namespace InventoryManagement.Controllers
 {
@@ -324,6 +326,41 @@ namespace InventoryManagement.Controllers
             }
 
             return products;
+        }
+
+
+        // ========== EXPORT TRANSACTIONS TO CSV ==========
+        [HttpGet]
+        public IActionResult ExportCsv(DateTime? fromDate, DateTime? toDate)
+        {
+            if (!IsUserLoggedIn())
+                return RedirectToAction("Login", "Account");
+
+            // ✅ Get transactions with date filter
+            var transactions = _stockRepository.GetStockTransactions(fromDate, toDate);
+
+            // ✅ Headers as per your table
+            string[] headers = {
+        "Transaction ID",
+        "Product",
+        "Quantity",
+        "Type",
+        "Date & Time"
+    };
+
+            string csvData = CsvHelper.ConvertToCsv(transactions, headers, item => new string[]
+            {
+        item.TransactionId.ToString(),
+        item.ProductName ?? "",
+        item.Quantity.ToString(),
+        item.TransactionType == "In" ? "Stock In" : "Stock Out",
+        item.TransactionDate.ToString("yyyy-MM-dd HH:mm:ss")
+            });
+
+            byte[] bytes = System.Text.Encoding.UTF8.GetBytes(csvData);
+            string fileName = "Transactions_" + DateTime.Now.ToString("yyyy-MM-dd") + ".csv";
+
+            return File(bytes, "text/csv", fileName);
         }
     }
 }

@@ -12,7 +12,6 @@
     <h2>📜 Transaction History</h2>
 
     <!-- Filter section (server-side, stays as is) -->
-   
     <div class="filter-section">
         <form method="get" asp-action="Index">
             <div class="filter-row">
@@ -27,6 +26,10 @@
                 <div class="actions">
                     <button type="submit"><i class="fas fa-filter"></i> Apply</button>
                     <a asp-action="Index"><i class="fas fa-eraser"></i> Clear</a>
+                    <!-- ✅ Export CSV Button at the end -->
+                    <a href="@Url.Action("ExportCsv", new { fromDate = ViewBag.FromDate, toDate = ViewBag.ToDate })" class="btn-export">
+                        📥 Export CSV
+                    </a>
                 </div>
             </div>
         </form>
@@ -90,9 +93,9 @@
     sortable: true,
     resizable: true,
     filter: true,
-    floatingFilter: true   // adds floating filter bar
+    floatingFilter: true   
     },
-    pagination: false,          // ✅ no pagination
+    pagination: false,         
     animateRows: true,
     enableCellTextSelection: true,
     ensureDomOrder: true
