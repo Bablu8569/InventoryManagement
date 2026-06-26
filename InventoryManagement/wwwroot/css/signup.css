@@ -115,3 +115,76 @@ body {
         padding: 11px;
     }
 }
+
+
+/* Add these styles to your existing CSS file */
+
+/* Validation styles */
+.has-error input {
+    border-color: #dc3545 !important;
+}
+
+.has-success input {
+    border-color: #28a745 !important;
+}
+
+.input-validation-error {
+    border-color: #dc3545 !important;
+}
+
+.input-validation-valid {
+    border-color: #28a745 !important;
+}
+
+.field-validation-error {
+    color: #dc3545;
+    font-size: 0.875rem;
+    display: block;
+    margin-top: 0.25rem;
+}
+
+.validation-summary-errors {
+    color: #dc3545;
+    padding: 0.75rem 1.25rem;
+    margin-bottom: 1rem;
+    border: 1px solid #f5c6cb;
+    border-radius: 0.25rem;
+    background-color: #f8d7da;
+}
+
+/* Password strength indicator */
+.password-strength {
+    margin-top: 0.5rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.875rem;
+}
+
+    .password-strength .weak {
+        color: #dc3545;
+        font-weight: bold;
+    }
+
+    .password-strength .medium {
+        color: #ffc107;
+        font-weight: bold;
+    }
+
+    .password-strength .strong {
+        color: #28a745;
+        font-weight: bold;
+    }
+
+/* Form text helper */
+.form-text {
+    display: block;
+    margin-top: 0.25rem;
+    font-size: 0.875rem;
+    color: #6c757d;
+}
+
+/* Disabled button state */
+.btn-signup:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
