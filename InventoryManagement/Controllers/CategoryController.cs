@@ -2,16 +2,24 @@
 using InventoryManagement.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
+using Microsoft.Extensions.Configuration;  // ✅ Add this
+using System;
+using System.Collections.Generic;
+using System.Data;
+using System.Text;  // ✅ Add for Encoding
 
 namespace InventoryManagement.Controllers
 {
     public class CategoryController : Controller
     {
         private readonly DatabaseHelper _db;
+        private readonly IConfiguration _configuration;  // ✅ Add this
 
-        public CategoryController(DatabaseHelper db)
+        public CategoryController(DatabaseHelper db, IConfiguration configuration)  // ✅ Add parameter
         {
             _db = db;
+            _configuration = configuration;  // ✅ Initialize
         }
 
         private bool IsUserLoggedIn()
@@ -175,6 +183,57 @@ namespace InventoryManagement.Controllers
 
                 data = categories
             });
+        }
+
+        // ========== EXPORT CATEGORIES TO CSV ==========
+        [HttpGet]
+        public IActionResult ExportCsv()
+        {
+            if (!IsUserLoggedIn())
+                return RedirectToAction("Login", "Account");
+
+            var categories = new List<CategoryModel>();
+            string connStr = _configuration.GetConnectionString("DefaultConnection");  // ✅ Now works
+
+            using (SqlConnection conn = new SqlConnection(connStr))
+            {
+                conn.Open();
+                using (SqlCommand cmd = new SqlCommand("sp_GetAllCategories", conn))
+                {
+                    cmd.CommandType = CommandType.StoredProcedure;
+                    using (var reader = cmd.ExecuteReader())
+                    {
+                        while (reader.Read())
+                        {
+                            categories.Add(new CategoryModel
+                            {
+                                CategoryId = Convert.ToInt32(reader["CategoryId"]),
+                                CategoryName = reader["CategoryName"]?.ToString() ?? "",
+                                Description = reader["Description"]?.ToString() ?? "",
+                                IsActive = Convert.ToBoolean(reader["IsActive"]),
+                                CreatedDate = Convert.ToDateTime(reader["CreatedDate"])
+                            });
+                        }
+                    }
+                }
+            }
+
+            // ✅ Headers as per your table
+            string[] headers = {
+                "Category Name",
+                "Status",
+                "Created Date"
+            };
+
+            string csvData = CsvHelper.ConvertToCsv(categories, headers, item => new string[]
+            {
+                item.CategoryName,
+                item.IsActive ? "Active" : "Inactive",
+                item.CreatedDate.ToString("dd-MM-yyyy")
+            });
+
+            byte[] bytes = System.Text.Encoding.UTF8.GetBytes(csvData);
+            return File(bytes, "text/csv", "Categories_" + DateTime.Now.ToString("yyyy-MM-dd") + ".csv");
         }
     }
 }
