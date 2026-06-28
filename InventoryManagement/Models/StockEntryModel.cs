@@ -5,6 +5,8 @@ namespace InventoryManagement.Models
     public class StockEntryModel
     {
         [Required(ErrorMessage = "Please select a product")]
+
+        public string ProductName { get; set; } = "";
         public int ProductId { get; set; }
 
         [Required(ErrorMessage = "Quantity is required")]

@@ -207,78 +207,161 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
     <script>
-        // Action cell renderer – Hide Edit/Delete for Normal User
+        // ✅ Action cell renderer with try-catch
         class ActionCellRenderer {
             init(params) {
-                const id = params.data.productId;
-                const role = document.getElementById("role").value;
-                const div = document.createElement('div');
-                div.style.display = 'flex';
-                div.style.justifyContent = 'center';
-                div.style.gap = '6px';
+                try {
+                    const id = params.data.productId;
+                    const role = document.getElementById("role").value;
+                    const div = document.createElement('div');
+                    div.style.display = 'flex';
+                    div.style.justifyContent = 'center';
+                    div.style.gap = '6px';
 
-                // Check if user is Normal User (Role = 2)
-                const isNormalUser = (role == "2");
+                    const isNormalUser = (role == "2");
 
-                // ---------- Edit Button ----------
-                const editBtn = document.createElement('a');
-                editBtn.className = 'product-action-btn edit-btn';
-                editBtn.innerHTML = '✏️ Edit';
-                
-                if (!isNormalUser) {
-                    editBtn.href = `/Product/Edit/${id}`;
-                } else {
-                    editBtn.style.display = 'none';
+                    // ---------- Edit Button ----------
+                    const editBtn = document.createElement('a');
+                    editBtn.className = 'product-action-btn edit-btn';
+                    editBtn.innerHTML = '✏️ Edit';
+                    
+                    if (!isNormalUser) {
+                        editBtn.href = `/Product/Edit/${id}`;
+                    } else {
+                        editBtn.style.display = 'none';
+                    }
+
+                    // ---------- Details Button (always enabled) ----------
+                    const detailsBtn = document.createElement('a');
+                    detailsBtn.href = `/Product/Details/${id}`;
+                    detailsBtn.className = 'product-action-btn details-btn';
+                    detailsBtn.innerHTML = '🔍 Details';
+
+                    // ---------- Delete Button ----------
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.className = 'product-action-btn delete-btn';
+                    deleteBtn.innerHTML = '🗑️ Delete';
+                    
+                    if (!isNormalUser) {
+                        deleteBtn.onclick = () => {
+                            try {
+                                if (confirm('Delete this product?')) {
+                                    $.ajax({
+                                        url: '@Url.Action("Delete", "Product")',
+                                        type: 'POST',
+                                        data: { id: id },
+                                        success: (res) => {
+                                            try {
+                                                if (res.success) {
+                                                    alert(res.message);
+                                                    loadGridData();
+                                                } else {
+                                                    alert(res.message);
+                                                }
+                                            } catch (ajaxError) {
+                                                console.error('Error in delete response:', ajaxError);
+                                                alert('Error processing delete response.');
+                                            }
+                                        },
+                                        error: (xhr, status, error) => {
+                                            console.error('Delete AJAX error:', error);
+                                            alert('Error deleting product. Please try again.');
+                                        }
+                                    });
+                                }
+                            } catch (deleteError) {
+                                console.error('Delete error:', deleteError);
+                                alert('Error deleting product.');
+                            }
+                        };
+                    } else {
+                        deleteBtn.style.display = 'none';
+                    }
+
+                    div.append(editBtn, detailsBtn, deleteBtn);
+                    this.eGui = div;
+                } catch (error) {
+                    console.error('Error in ActionCellRenderer:', error);
                 }
-
-                // ---------- Details Button (always enabled) ----------
-                const detailsBtn = document.createElement('a');
-                detailsBtn.href = `/Product/Details/${id}`;
-                detailsBtn.className = 'product-action-btn details-btn';
-                detailsBtn.innerHTML = '🔍 Details';
-
-                // ---------- Delete Button ----------
-                const deleteBtn = document.createElement('button');
-                deleteBtn.className = 'product-action-btn delete-btn';
-                deleteBtn.innerHTML = '🗑️ Delete';
-                
-                if (!isNormalUser) {
-                    deleteBtn.onclick = () => {
-                        if (confirm('Delete this product?')) {
-                            $.ajax({
-                                url: '@Url.Action("Delete", "Product")',
-                                type: 'POST',
-                                data: { id: id },
-                                success: (res) => {
-                                    if (res.success) {
-                                        alert(res.message);
-                                        loadGridData();
-                                    } else {
-                                        alert(res.message);
-                                    }
-                                },
-                                error: () => alert('Error')
-                            });
-                        }
-                    };
-                } else {
-                    deleteBtn.style.display = 'none';
-                }
-
-                div.append(editBtn, detailsBtn, deleteBtn);
-                this.eGui = div;
             }
-            getGui() { return this.eGui; }
+            getGui() {
+                return this.eGui;
+            }
         }
 
         const columnDefs = [
-            { headerName: "ID", field: "productId", width: 80, filter: 'agTextColumnFilter', floatingFilter: true, sortable: true },
-            { headerName: "Product Name", field: "productName", width: 200, filter: 'agTextColumnFilter', floatingFilter: true, sortable: true },
-            { headerName: "Category", field: "categoryName", width: 150, filter: 'agTextColumnFilter', floatingFilter: true, sortable: true },
-            { headerName: "Price", field: "price", width: 120, filter: 'agNumberColumnFilter', floatingFilter: true, sortable: true, valueFormatter: (p) => `₹ ${p.value?.toFixed(2)}` },
-            { headerName: "Quantity", field: "quantity", width: 110, filter: 'agNumberColumnFilter', floatingFilter: true, sortable: true },
-            { headerName: "Created Date", field: "createdDate", width: 130, filter: 'agDateColumnFilter', floatingFilter: true, sortable: true, valueFormatter: (p) => p.value ? new Date(p.value).toLocaleDateString() : '' },
-            { headerName: "Actions", cellRenderer: ActionCellRenderer, pinned: 'right', width: 280, sortable: false, filter: false }
+            { 
+                headerName: "ID", 
+                field: "productId", 
+                width: 80, 
+                filter: 'agTextColumnFilter', 
+                floatingFilter: true, 
+                sortable: true 
+            },
+            { 
+                headerName: "Product Name", 
+                field: "productName", 
+                width: 200, 
+                filter: 'agTextColumnFilter', 
+                floatingFilter: true, 
+                sortable: true 
+            },
+            { 
+                headerName: "Category", 
+                field: "categoryName", 
+                width: 150, 
+                filter: 'agTextColumnFilter', 
+                floatingFilter: true, 
+                sortable: true 
+            },
+            { 
+                headerName: "Price", 
+                field: "price", 
+                width: 120, 
+                filter: 'agNumberColumnFilter', 
+                floatingFilter: true, 
+                sortable: true, 
+                valueFormatter: (p) => {
+                    try {
+                        return `₹ ${p.value?.toFixed(2)}`;
+                    } catch (error) {
+                        console.error('Price formatter error:', error);
+                        return '₹ 0.00';
+                    }
+                }
+            },
+            { 
+                headerName: "Quantity", 
+                field: "quantity", 
+                width: 110, 
+                filter: 'agNumberColumnFilter', 
+                floatingFilter: true, 
+                sortable: true 
+            },
+            { 
+                headerName: "Created Date", 
+                field: "createdDate", 
+                width: 130, 
+                filter: 'agDateColumnFilter', 
+                floatingFilter: true, 
+                sortable: true, 
+                valueFormatter: (p) => {
+                    try {
+                        return p.value ? new Date(p.value).toLocaleDateString() : '';
+                    } catch (error) {
+                        console.error('Date formatter error:', error);
+                        return '';
+                    }
+                }
+            },
+            { 
+                headerName: "Actions", 
+                cellRenderer: ActionCellRenderer, 
+                pinned: 'right', 
+                width: 280, 
+                sortable: false, 
+                filter: false 
+            }
         ];
 
         const gridOptions = {
@@ -287,125 +370,163 @@
             pagination: false,
             rowSelection: 'single',
             onGridReady: (params) => {
-                loadGridData();
+                try {
+                    loadGridData();
+                } catch (error) {
+                    console.error('Grid ready error:', error);
+                }
             }
         };
 
         function getUrlValue(name) {
-            const urlParams = new URLSearchParams(window.location.search);
-            return urlParams.get(name);
+            try {
+                const urlParams = new URLSearchParams(window.location.search);
+                return urlParams.get(name);
+            } catch (error) {
+                console.error('Error getting URL parameter:', error);
+                return null;
+            }
         }
 
         function loadGridData() {
-            $.ajax({
-                url: '@Url.Action("Search", "Product")',
-                type: 'GET',
-                data: { productName: '', categoryId: '' },
-                success: (res) => {
-                    if (res.success) {
-                        gridOptions.api.updateGridOptions({ rowData: res.data });
-                        
-                        let filterModel = {};
+            try {
+                $.ajax({
+                    url: '@Url.Action("Search", "Product")',
+                    type: 'GET',
+                    data: { productName: '', categoryId: '' },
+                    dataType: 'json',
+                    success: (res) => {
+                        try {
+                            if (res.success) {
+                                gridOptions.api.updateGridOptions({ rowData: res.data });
+                                
+                                let filterModel = {};
 
-                        // 1. Product Name
-                        const productName = getUrlValue("productName") || getUrlValue("search");
-                        if (productName) {
-                            filterModel.productName = {
-                                filterType: 'text',
-                                type: 'contains',
-                                filter: productName
-                            };
-                        }
-
-                        // 2. Category Name
-                        const categoryName = getUrlValue("categoryName");
-                        if (categoryName) {
-                            filterModel.categoryName = {
-                                filterType: 'text',
-                                type: 'contains',
-                                filter: categoryName
-                            };
-                        }
-
-                        // 3. Product ID
-                        const productId = getUrlValue("productId");
-                        if (productId && !isNaN(productId)) {
-                            filterModel.productId = {
-                                filterType: 'number',
-                                type: 'equals',
-                                filter: parseFloat(productId)
-                            };
-                        }
-
-                        // 4. Price range
-                        const minPrice = getUrlValue("minPrice");
-                        const maxPrice = getUrlValue("maxPrice");
-                        if (minPrice || maxPrice) {
-                            let priceFilter = { filterType: 'number', type: 'inRange' };
-                            if (minPrice && !isNaN(minPrice)) priceFilter.filter = parseFloat(minPrice);
-                            if (maxPrice && !isNaN(maxPrice)) priceFilter.filterTo = parseFloat(maxPrice);
-                            filterModel.price = priceFilter;
-                        }
-
-                        // 5. Quantity – EXACT MATCH
-                        const minQty = getUrlValue("minQuantity");
-                        const maxQty = getUrlValue("maxQuantity");
-                        const qtyValue = minQty || maxQty;
-                        
-                        if (qtyValue && !isNaN(qtyValue)) {
-                            filterModel.quantity = {
-                                filterType: 'number',
-                                type: 'equals',
-                                filter: parseInt(qtyValue)
-                            };
-                        }
-
-                        if (Object.keys(filterModel).length > 0) {
-                            gridOptions.api.setFilterModel(filterModel);
-                            gridOptions.api.onFilterChanged();
-                        }
-
-                        // Floating filter update
-                        if (qtyValue && !isNaN(qtyValue)) {
-                            setTimeout(function() {
-                                try {
-                                    gridOptions.api.getColumnFilterInstance('quantity', function(filterInstance) {
-                                        if (filterInstance) {
-                                            const model = {
-                                                filterType: 'number',
-                                                type: 'equals',
-                                                filter: parseInt(qtyValue)
-                                            };
-                                            filterInstance.setModel(model);
-                                            if (filterInstance.onFloatingFilterChanged) {
-                                                filterInstance.onFloatingFilterChanged('equals', parseInt(qtyValue));
-                                            }
-                                        }
-                                    });
-                                } catch(e) {
-                                    console.log('⚠️ Floating filter update error:', e.message);
+                                // 1. Product Name
+                                const productName = getUrlValue("productName") || getUrlValue("search");
+                                if (productName) {
+                                    filterModel.productName = {
+                                        filterType: 'text',
+                                        type: 'contains',
+                                        filter: productName
+                                    };
                                 }
-                            }, 300);
-                        }
 
-                    } else {
-                        alert('Failed to load products');
+                                // 2. Category Name
+                                const categoryName = getUrlValue("categoryName");
+                                if (categoryName) {
+                                    filterModel.categoryName = {
+                                        filterType: 'text',
+                                        type: 'contains',
+                                        filter: categoryName
+                                    };
+                                }
+
+                                // 3. Product ID
+                                const productId = getUrlValue("productId");
+                                if (productId && !isNaN(productId)) {
+                                    filterModel.productId = {
+                                        filterType: 'number',
+                                        type: 'equals',
+                                        filter: parseFloat(productId)
+                                    };
+                                }
+
+                                // 4. Price range
+                                const minPrice = getUrlValue("minPrice");
+                                const maxPrice = getUrlValue("maxPrice");
+                                if (minPrice || maxPrice) {
+                                    let priceFilter = { filterType: 'number', type: 'inRange' };
+                                    if (minPrice && !isNaN(minPrice)) priceFilter.filter = parseFloat(minPrice);
+                                    if (maxPrice && !isNaN(maxPrice)) priceFilter.filterTo = parseFloat(maxPrice);
+                                    filterModel.price = priceFilter;
+                                }
+
+                                // 5. Quantity – EXACT MATCH
+                                const minQty = getUrlValue("minQuantity");
+                                const maxQty = getUrlValue("maxQuantity");
+                                const qtyValue = minQty || maxQty;
+                                
+                                if (qtyValue && !isNaN(qtyValue)) {
+                                    filterModel.quantity = {
+                                        filterType: 'number',
+                                        type: 'equals',
+                                        filter: parseInt(qtyValue)
+                                    };
+                                }
+
+                                if (Object.keys(filterModel).length > 0) {
+                                    gridOptions.api.setFilterModel(filterModel);
+                                    gridOptions.api.onFilterChanged();
+                                }
+
+                                // Floating filter update
+                                if (qtyValue && !isNaN(qtyValue)) {
+                                    setTimeout(function() {
+                                        try {
+                                            gridOptions.api.getColumnFilterInstance('quantity', function(filterInstance) {
+                                                if (filterInstance) {
+                                                    const model = {
+                                                        filterType: 'number',
+                                                        type: 'equals',
+                                                        filter: parseInt(qtyValue)
+                                                    };
+                                                    filterInstance.setModel(model);
+                                                    if (filterInstance.onFloatingFilterChanged) {
+                                                        filterInstance.onFloatingFilterChanged('equals', parseInt(qtyValue));
+                                                    }
+                                                }
+                                            });
+                                        } catch (filterError) {
+                                            console.log('⚠️ Floating filter update error:', filterError.message);
+                                        }
+                                    }, 300);
+                                }
+
+                            } else {
+                                alert('Failed to load products: ' + (res.message || 'Unknown error'));
+                            }
+                        } catch (processingError) {
+                            console.error('Error processing response:', processingError);
+                            alert('Error processing products data.');
+                        }
+                    },
+                    error: (xhr, status, error) => {
+                        console.error('AJAX error:', error);
+                        console.error('Status:', status);
+                        console.error('Response:', xhr.responseText);
+                        alert('Error loading products. Please check console for details.');
                     }
-                },
-                error: () => alert('Error loading products')
-            });
+                });
+            } catch (error) {
+                console.error('Error in loadGridData:', error);
+                alert('Error loading products.');
+            }
         }
 
         $(document).ready(() => {
-            const gridDiv = document.querySelector('#productGrid');
-            new agGrid.Grid(gridDiv, gridOptions);
-            
-            // Handle window resize
-            window.addEventListener('resize', function() {
-                if (gridOptions.api) {
-                    gridOptions.api.sizeColumnsToFit();
+            try {
+                const gridDiv = document.querySelector('#productGrid');
+                if (gridDiv) {
+                    new agGrid.Grid(gridDiv, gridOptions);
+                } else {
+                    console.error('Grid container not found.');
                 }
-            });
+                
+                // Handle window resize
+                window.addEventListener('resize', function() {
+                    try {
+                        if (gridOptions.api) {
+                            gridOptions.api.sizeColumnsToFit();
+                        }
+                    } catch (resizeError) {
+                        console.error('Resize error:', resizeError);
+                    }
+                });
+            } catch (error) {
+                console.error('Error initializing grid:', error);
+                alert('Error loading products grid.');
+            }
         });
     </script>
 }
