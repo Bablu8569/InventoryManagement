@@ -96,7 +96,7 @@
         transform: scale(1.02);
     }
 
-    /* ✅ Top bar: heading left, buttons right */
+    /* Top bar: heading left, buttons right */
     .top-bar {
         display: flex;
         justify-content: space-between;
@@ -120,11 +120,11 @@
 <input type="hidden" id="role" value="@Context.Session.GetString("Role")" />
 
 <div class="container mt-4">
-    <!--  Single Top Bar with Export CSV on Right -->
+    <!-- Single Top Bar with Export CSV on Right -->
     <div class="top-bar">
         <h2>📂 Categories</h2>
         <div class="plus-wrapper">
-            <!--  Export CSV Button (Right Side) -->
+            <!-- Export CSV Button (Right Side) -->
             <a href="@Url.Action("ExportCsv")" class="btn-export">
                 📥 Export CSV
             </a>
@@ -161,64 +161,73 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
     <script>
-        //  Action Cell Renderer – Hide Edit/Delete for Normal User
+        // ✅ Action Cell Renderer – Hide Edit/Delete for Normal User
         class ActionCellRenderer {
             init(params) {
-                const categoryId = params.data.categoryId;
-                const role = document.getElementById("role").value;
-                const container = document.createElement('div');
-                container.style.display = 'flex';
-                container.style.justifyContent = 'center';
-                container.style.alignItems = 'center';
-                container.style.gap = '8px';
+                try {
+                    const categoryId = params.data.categoryId;
+                    const role = document.getElementById("role").value;
+                    const container = document.createElement('div');
+                    container.style.display = 'flex';
+                    container.style.justifyContent = 'center';
+                    container.style.alignItems = 'center';
+                    container.style.gap = '8px';
 
-                //  Check if user is Normal User (Role = 2)
-                const isNormalUser = (role == "2");
+                    const isNormalUser = (role == "2");
 
-                // ---------- Edit Button ----------
-                const editBtn = document.createElement('a');
-                editBtn.className = 'grid-action-btn edit-btn';
-                editBtn.innerHTML = '✏️ Edit';
+                    // ---------- Edit Button ----------
+                    const editBtn = document.createElement('a');
+                    editBtn.className = 'grid-action-btn edit-btn';
+                    editBtn.innerHTML = '✏️ Edit';
 
-                if (!isNormalUser) {
-                    editBtn.href = `/Category/Edit/${categoryId}`;
-                } else {
-                    //  Normal user – hide edit button
-                    editBtn.style.display = 'none';
-                }
+                    if (!isNormalUser) {
+                        editBtn.href = `/Category/Edit/${categoryId}`;
+                    } else {
+                        editBtn.style.display = 'none';
+                    }
 
-                // ---------- Delete Button ----------
-                const deleteBtn = document.createElement('button');
-                deleteBtn.className = 'grid-action-btn delete-btn';
-                deleteBtn.innerHTML = '🗑️ Delete';
+                    // ---------- Delete Button ----------
+                    const deleteBtn = document.createElement('button');
+                    deleteBtn.className = 'grid-action-btn delete-btn';
+                    deleteBtn.innerHTML = '🗑️ Delete';
 
-                if (!isNormalUser) {
-                    deleteBtn.onclick = () => {
-                        if (confirm('Are you sure you want to delete this category?')) {
-                            $.ajax({
-                                url: '/Category/Delete',
-                                type: 'POST',
-                                data: { id: categoryId },
-                                success: (res) => {
-                                    if (res.success) {
-                                        alert(res.message);
-                                        loadGridData();
-                                    } else {
-                                        alert(res.message);
+                    if (!isNormalUser) {
+                        deleteBtn.onclick = () => {
+                            if (confirm('Are you sure you want to delete this category?')) {
+                                $.ajax({
+                                    url: '/Category/Delete',
+                                    type: 'POST',
+                                    data: { id: categoryId },
+                                    success: (res) => {
+                                        try {
+                                            if (res.success) {
+                                                alert(res.message);
+                                                loadGridData();
+                                            } else {
+                                                alert(res.message);
+                                            }
+                                        } catch (ajaxError) {
+                                            console.error('Error in delete response:', ajaxError);
+                                            alert('Error processing delete response.');
+                                        }
+                                    },
+                                    error: (xhr, status, error) => {
+                                        console.error('Delete AJAX error:', error);
+                                        alert('Error deleting category. Please try again.');
                                     }
-                                },
-                                error: () => alert('Error deleting category')
-                            });
-                        }
-                    };
-                } else {
-                    // ❌ Normal user – hide delete button
-                    deleteBtn.style.display = 'none';
-                }
+                                });
+                            }
+                        };
+                    } else {
+                        deleteBtn.style.display = 'none';
+                    }
 
-                container.appendChild(editBtn);
-                container.appendChild(deleteBtn);
-                this.eGui = container;
+                    container.appendChild(editBtn);
+                    container.appendChild(deleteBtn);
+                    this.eGui = container;
+                } catch (error) {
+                    console.error('Error in ActionCellRenderer:', error);
+                }
             }
             getGui() {
                 return this.eGui;
@@ -242,7 +251,14 @@
                 floatingFilter: true, 
                 filter: 'agTextColumnFilter',
                 width: 120,
-                cellRenderer: (params) => params.value ? "Active" : "Inactive",
+                cellRenderer: (params) => {
+                    try {
+                        return params.value ? "Active" : "Inactive";
+                    } catch (error) {
+                        console.error('Status render error:', error);
+                        return 'Unknown';
+                    }
+                },
                 filterParams: { caseSensitive: false, filterOptions: ['contains'] }
             },
             { 
@@ -252,7 +268,14 @@
                 floatingFilter: true, 
                 filter: 'agDateColumnFilter',
                 width: 150,
-                valueFormatter: (params) => params.value ? new Date(params.value).toLocaleDateString() : ''
+                valueFormatter: (params) => {
+                    try {
+                        return params.value ? new Date(params.value).toLocaleDateString() : '';
+                    } catch (error) {
+                        console.error('Date formatter error:', error);
+                        return '';
+                    }
+                }
             },
             { 
                 headerName: "Actions", 
@@ -271,43 +294,82 @@
             pagination: false,
             rowSelection: 'single',
             animateRows: true,
-            onGridReady: (params) => params.api.sizeColumnsToFit()
+            onGridReady: (params) => {
+                try {
+                    params.api.sizeColumnsToFit();
+                } catch (error) {
+                    console.error('Grid ready error:', error);
+                }
+            }
         };
 
         // Helper: get URL parameter by name
         function getUrlValue(name) {
-            const urlParams = new URLSearchParams(window.location.search);
-            return urlParams.get(name);
+            try {
+                const urlParams = new URLSearchParams(window.location.search);
+                return urlParams.get(name);
+            } catch (error) {
+                console.error('Error getting URL parameter:', error);
+                return null;
+            }
         }
 
         function loadGridData() {
-            $.get('/Category/GetCategories', (response) => {
-                if (response.success && response.data) {
-                    gridOptions.api.setRowData(response.data);
-                    
-                    //  Check for URL parameter "search" or "categoryName"
-                    const searchValue = getUrlValue("search") || getUrlValue("categoryName");
-                    if (searchValue) {
-                        // Apply filter on the "categoryName" column
-                        gridOptions.api.setFilterModel({
-                            categoryName: {
-                                filterType: 'text',
-                                type: 'contains',
-                                filter: searchValue
+            try {
+                $.ajax({
+                    url: '/Category/GetCategories',
+                    type: 'GET',
+                    dataType: 'json',
+                    success: function(response) {
+                        try {
+                            if (response.success && response.data) {
+                                gridOptions.api.setRowData(response.data);
+                                
+                                const searchValue = getUrlValue("search") || getUrlValue("categoryName");
+                                if (searchValue) {
+                                    gridOptions.api.setFilterModel({
+                                        categoryName: {
+                                            filterType: 'text',
+                                            type: 'contains',
+                                            filter: searchValue
+                                        }
+                                    });
+                                    gridOptions.api.onFilterChanged();
+                                }
+                            } else {
+                                alert('Failed to load categories: ' + (response.message || 'Unknown error'));
                             }
-                        });
-                        gridOptions.api.onFilterChanged();
+                        } catch (error) {
+                            console.error('Error processing response:', error);
+                            alert('Error loading categories.');
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('AJAX error:', error);
+                        console.error('Status:', status);
+                        console.error('Response:', xhr.responseText);
+                        alert('Error loading categories. Please check console for details.');
                     }
-                } else {
-                    alert('Failed to load categories.');
-                }
-            }).fail(() => alert('Error loading categories.'));
+                });
+            } catch (error) {
+                console.error('Error in loadGridData:', error);
+                alert('Error loading categories.');
+            }
         }
 
-        $(document).ready(() => {
-            const gridDiv = document.querySelector('#categoryGrid');
-            new agGrid.Grid(gridDiv, gridOptions);
-            loadGridData();
+        $(document).ready(function() {
+            try {
+                const gridDiv = document.querySelector('#categoryGrid');
+                if (gridDiv) {
+                    new agGrid.Grid(gridDiv, gridOptions);
+                    loadGridData();
+                } else {
+                    console.error('Grid container not found.');
+                }
+            } catch (error) {
+                console.error('Error initializing grid:', error);
+                alert('Error loading categories grid.');
+            }
         });
     </script>
 }

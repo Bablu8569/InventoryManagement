@@ -3,44 +3,76 @@ using InventoryManagement.Models;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
-using Microsoft.Extensions.Configuration;  // ✅ Add this
+using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Data;
-using System.Text;  // ✅ Add for Encoding
+using System.Text;
 
 namespace InventoryManagement.Controllers
 {
     public class CategoryController : Controller
     {
         private readonly DatabaseHelper _db;
-        private readonly IConfiguration _configuration;  // ✅ Add this
+        private readonly IConfiguration _configuration;
 
-        public CategoryController(DatabaseHelper db, IConfiguration configuration)  // ✅ Add parameter
+        public CategoryController(DatabaseHelper db, IConfiguration configuration)
         {
             _db = db;
-            _configuration = configuration;  // ✅ Initialize
+            _configuration = configuration;
         }
 
         private bool IsUserLoggedIn()
         {
-            return !string.IsNullOrEmpty(
-                HttpContext.Session.GetString("Username")
-            );
+            try
+            {
+                return !string.IsNullOrEmpty(
+                    HttpContext.Session.GetString("Username")
+                );
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private bool CanEdit()
+        {
+            try
+            {
+                var role = HttpContext.Session.GetString("Role");
+                return role == "1" || role == "3";
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         // ================= INDEX =================
 
         public IActionResult Index(string? search = null)
         {
-            if (!IsUserLoggedIn())
-                return RedirectToAction("Login", "Account");
+            try
+            {
+                if (!IsUserLoggedIn())
+                    return RedirectToAction("Login", "Account");
 
-            var categories = CategoryModel.GetAll(_db, search);
+                var categories = CategoryModel.GetAll(_db, search);
+                ViewBag.Search = search;
 
-            ViewBag.Search = search;
-
-            return View(categories);
+                return View(categories);
+            }
+            catch (SqlException ex)
+            {
+                TempData["Error"] = "Database error loading categories: " + ex.Message;
+                return RedirectToAction("Index", "Dashboard");
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = "Error loading categories: " + ex.Message;
+                return RedirectToAction("Index", "Dashboard");
+            }
         }
 
         // ================= CREATE GET =================
@@ -48,9 +80,24 @@ namespace InventoryManagement.Controllers
         [HttpGet]
         public IActionResult Create()
         {
-            if (!IsUserLoggedIn())
-                return RedirectToAction("Login", "Account");
-            return View();
+            try
+            {
+                if (!IsUserLoggedIn())
+                    return RedirectToAction("Login", "Account");
+
+                if (!CanEdit())
+                {
+                    TempData["Error"] = "Access Denied. Only Admin and Super User can add categories.";
+                    return RedirectToAction("Index");
+                }
+
+                return View();
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = "Error loading create form: " + ex.Message;
+                return RedirectToAction("Index");
+            }
         }
 
         // ================= CREATE POST =================
@@ -59,21 +106,38 @@ namespace InventoryManagement.Controllers
         [ValidateAntiForgeryToken]
         public IActionResult Create(CategoryModel model)
         {
-            if (!IsUserLoggedIn())
-                return RedirectToAction("Login", "Account");
-
-            if (!ModelState.IsValid)
-                return View(model);
-
-            string message = model.Insert(_db);
-            if (message == "Category added successfully.")
+            try
             {
-                TempData["Success"] = message;
-                return RedirectToAction("Index");
+                if (!IsUserLoggedIn())
+                    return RedirectToAction("Login", "Account");
 
+                if (!CanEdit())
+                {
+                    TempData["Error"] = "Access Denied. Only Admin and Super User can add categories.";
+                    return RedirectToAction("Index");
+                }
+
+                if (!ModelState.IsValid)
+                    return View(model);
+
+                string message = model.Insert(_db);
+
+                if (message == "Category added successfully.")
+                {
+                    TempData["Success"] = message;
+                    return RedirectToAction("Index");
+                }
+
+                ModelState.AddModelError("", message);
             }
-
-            ModelState.AddModelError("", message);
+            catch (SqlException ex)
+            {
+                ModelState.AddModelError("", "Database error: " + ex.Message);
+            }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError("", "Error: " + ex.Message);
+            }
 
             return View(model);
         }
@@ -83,15 +147,37 @@ namespace InventoryManagement.Controllers
         [HttpGet]
         public IActionResult Edit(int id)
         {
-            if (!IsUserLoggedIn())
-                return RedirectToAction("Login", "Account");
+            try
+            {
+                if (!IsUserLoggedIn())
+                    return RedirectToAction("Login", "Account");
 
-            var category = CategoryModel.GetById(_db, id);
+                if (!CanEdit())
+                {
+                    TempData["Error"] = "Access Denied. Only Admin and Super User can edit categories.";
+                    return RedirectToAction("Index");
+                }
 
-            if (category == null)
+                var category = CategoryModel.GetById(_db, id);
+
+                if (category == null)
+                {
+                    TempData["Error"] = "Category not found.";
+                    return RedirectToAction("Index");
+                }
+
+                return View(category);
+            }
+            catch (SqlException ex)
+            {
+                TempData["Error"] = "Database error loading category: " + ex.Message;
                 return RedirectToAction("Index");
-
-            return View(category);
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = "Error loading category: " + ex.Message;
+                return RedirectToAction("Index");
+            }
         }
 
         // ================= EDIT POST =================
@@ -99,28 +185,40 @@ namespace InventoryManagement.Controllers
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult Edit(CategoryModel model)
-
         {
-            if (!IsUserLoggedIn())
-                return RedirectToAction("Login", "Account");
-
-            if (!ModelState.IsValid)
-                return View(model);
-
-            string message = model.Update(_db);
-
-
-            if (message == "Category updated successfully.")
+            try
             {
-                TempData["Success"] = message;
+                if (!IsUserLoggedIn())
+                    return RedirectToAction("Login", "Account");
 
+                if (!CanEdit())
+                {
+                    TempData["Error"] = "Access Denied. Only Admin and Super User can edit categories.";
+                    return RedirectToAction("Index");
+                }
 
-                return RedirectToAction("Index");
+                if (!ModelState.IsValid)
+                    return View(model);
 
+                string message = model.Update(_db);
 
+                if (message == "Category updated successfully.")
+                {
+                    TempData["Success"] = message;
+                    return RedirectToAction("Index");
+                }
+
+                ModelState.AddModelError("", message);
+            }
+            catch (SqlException ex)
+            {
+                ModelState.AddModelError("", "Database error: " + ex.Message);
+            }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError("", "Error: " + ex.Message);
             }
 
-            ModelState.AddModelError("", message);
             return View(model);
         }
 
@@ -129,31 +227,50 @@ namespace InventoryManagement.Controllers
         [HttpPost]
         public JsonResult Delete(int id)
         {
-            if (!IsUserLoggedIn())
+            try
+            {
+                if (!IsUserLoggedIn())
+                {
+                    return Json(new
+                    {
+                        success = false,
+                        message = "Session expired. Please login again."
+                    });
+                }
+
+                if (!CanEdit())
+                {
+                    return Json(new
+                    {
+                        success = false,
+                        message = "Unauthorized. Only Admin and Super User can delete categories."
+                    });
+                }
+
+                string message = CategoryModel.Delete(_db, id);
+
+                return Json(new
+                {
+                    success = message.Contains("successfully"),
+                    message = message
+                });
+            }
+            catch (SqlException ex)
             {
                 return Json(new
                 {
-
-                    message = "Session expired. Please login again."
-
+                    success = false,
+                    message = "Database error: " + ex.Message
                 });
             }
-
-            string message =
-                CategoryModel.Delete(
-                    _db,
-                    id
-                );
-
-            return Json(new
+            catch (Exception ex)
             {
-                success =
-                    message.Contains(
-                        "successfully"
-                    ),
-
-                message = message
-            });
+                return Json(new
+                {
+                    success = false,
+                    message = "Error: " + ex.Message
+                });
+            }
         }
 
         // ================= AG GRID =================
@@ -161,79 +278,117 @@ namespace InventoryManagement.Controllers
         [HttpGet]
         public JsonResult GetCategories()
         {
-            if (!IsUserLoggedIn())
+            try
+            {
+                if (!IsUserLoggedIn())
+                {
+                    return Json(new
+                    {
+                        success = false,
+                        message = "Unauthorized"
+                    });
+                }
+
+                var categories = CategoryModel.GetAll(_db);
+
+                return Json(new
+                {
+                    success = true,
+                    data = categories
+                });
+            }
+            catch (SqlException ex)
             {
                 return Json(new
                 {
                     success = false,
-
-                    message =
-                    "Unauthorized"
+                    message = "Database error: " + ex.Message
                 });
             }
-
-            var categories =
-                CategoryModel.GetAll(
-                    _db
-                );
-
-            return Json(new
+            catch (Exception ex)
             {
-                success = true,
-
-                data = categories
-            });
+                return Json(new
+                {
+                    success = false,
+                    message = "Error: " + ex.Message
+                });
+            }
         }
 
         // ========== EXPORT CATEGORIES TO CSV ==========
         [HttpGet]
         public IActionResult ExportCsv()
         {
-            if (!IsUserLoggedIn())
-                return RedirectToAction("Login", "Account");
-
-            var categories = new List<CategoryModel>();
-            string connStr = _configuration.GetConnectionString("DefaultConnection");  // ✅ Now works
-
-            using (SqlConnection conn = new SqlConnection(connStr))
+            try
             {
-                conn.Open();
-                using (SqlCommand cmd = new SqlCommand("sp_GetAllCategories", conn))
+                if (!IsUserLoggedIn())
+                    return RedirectToAction("Login", "Account");
+
+                var categories = new List<CategoryModel>();
+                string connStr = _configuration.GetConnectionString("DefaultConnection");
+
+                if (string.IsNullOrEmpty(connStr))
                 {
-                    cmd.CommandType = CommandType.StoredProcedure;
-                    using (var reader = cmd.ExecuteReader())
+                    TempData["Error"] = "Database connection string is missing.";
+                    return RedirectToAction("Index");
+                }
+
+                using (SqlConnection conn = new SqlConnection(connStr))
+                {
+                    conn.Open();
+                    using (SqlCommand cmd = new SqlCommand("sp_GetAllCategories", conn))
                     {
-                        while (reader.Read())
+                        cmd.CommandType = CommandType.StoredProcedure;
+                        using (var reader = cmd.ExecuteReader())
                         {
-                            categories.Add(new CategoryModel
+                            while (reader.Read())
                             {
-                                CategoryId = Convert.ToInt32(reader["CategoryId"]),
-                                CategoryName = reader["CategoryName"]?.ToString() ?? "",
-                                Description = reader["Description"]?.ToString() ?? "",
-                                IsActive = Convert.ToBoolean(reader["IsActive"]),
-                                CreatedDate = Convert.ToDateTime(reader["CreatedDate"])
-                            });
+                                categories.Add(new CategoryModel
+                                {
+                                    CategoryId = Convert.ToInt32(reader["CategoryId"]),
+                                    CategoryName = reader["CategoryName"]?.ToString() ?? "",
+                                    Description = reader["Description"]?.ToString() ?? "",
+                                    IsActive = Convert.ToBoolean(reader["IsActive"]),
+                                    CreatedDate = Convert.ToDateTime(reader["CreatedDate"])
+                                });
+                            }
                         }
                     }
                 }
+
+                if (categories == null || categories.Count == 0)
+                {
+                    TempData["Error"] = "No categories found to export.";
+                    return RedirectToAction("Index");
+                }
+
+                // Headers as per your table
+                string[] headers = {
+                    "Category Name",
+                    "Status",
+                    "Created Date"
+                };
+
+                string csvData = CsvHelper.ConvertToCsv(categories, headers, item => new string[]
+                {
+                    item.CategoryName,
+                    item.IsActive ? "Active" : "Inactive",
+                    item.CreatedDate.ToString("dd-MM-yyyy")
+                });
+
+                byte[] bytes = Encoding.UTF8.GetBytes(csvData);
+                return File(bytes, "text/csv", "Categories_" + DateTime.Now.ToString("yyyy-MM-dd") + ".csv");
             }
-
-            // ✅ Headers as per your table
-            string[] headers = {
-                "Category Name",
-                "Status",
-                "Created Date"
-            };
-
-            string csvData = CsvHelper.ConvertToCsv(categories, headers, item => new string[]
+            catch (SqlException ex)
             {
-                item.CategoryName,
-                item.IsActive ? "Active" : "Inactive",
-                item.CreatedDate.ToString("dd-MM-yyyy")
-            });
-
-            byte[] bytes = System.Text.Encoding.UTF8.GetBytes(csvData);
-            return File(bytes, "text/csv", "Categories_" + DateTime.Now.ToString("yyyy-MM-dd") + ".csv");
+                TempData["Error"] = "Database error exporting CSV: " + ex.Message;
+                return RedirectToAction("Index");
+            }
+            catch (Exception ex)
+            {
+                TempData["Error"] = "Error exporting CSV: " + ex.Message;
+                return RedirectToAction("Index");
+            }
         }
     }
 }
