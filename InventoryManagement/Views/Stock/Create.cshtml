@@ -20,6 +20,7 @@
         <form method="post" asp-action="Create">
             <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
 
+            <!-- Product Dropdown -->
             <div class="form-group">
                 <label class="form-label"><i class="fas fa-box me-1"></i> Select Product</label>
                 <select asp-for="ProductId" class="form-select" asp-items="@(new SelectList(ViewBag.Products, "ProductId", "ProductName"))">
@@ -28,12 +29,21 @@
                 <span asp-validation-for="ProductId" class="text-danger"></span>
             </div>
 
+            <!-- Quantity -->
             <div class="form-group">
                 <label class="form-label"><i class="fas fa-sort-amount-up me-1"></i> Quantity</label>
                 <input asp-for="Quantity" class="form-control" type="number" min="1" placeholder="Enter quantity" />
                 <span asp-validation-for="Quantity" class="text-danger"></span>
             </div>
 
+            <!--  Remarks Field -->
+            <div class="form-group">
+                <label class="form-label"><i class="fas fa-comment me-1"></i> Remarks</label>
+                <input asp-for="Remarks" class="form-control" type="text" placeholder="Add remarks (optional)" />
+                <span asp-validation-for="Remarks" class="text-danger"></span>
+            </div>
+
+            <!-- Transaction Type -->
             <div class="form-group">
                 <label class="form-label"><i class="fas fa-arrow-right-arrow-left me-1"></i> Transaction Type</label>
                 <div class="radio-group">
