@@ -2,12 +2,12 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
-    font-family: 'Segoe UI', sans-serif;
+    font-family: "Segoe UI", sans-serif;
 }
 
 body {
     min-height: 100vh;
-    background-color lightblue;
+    background: linear-gradient(135deg, #4facfe, #00c6fb);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -16,175 +16,138 @@ body {
 
 .signup-container {
     width: 100%;
-    max-width: 450px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 .signup-card {
+    width: 420px;
     background: #fff;
     padding: 35px;
     border-radius: 12px;
-    box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    box-shadow: 0 8px 20px rgba(0,0,0,.15);
 }
 
     .signup-card h2 {
         text-align: center;
-        color: #333;
         margin-bottom: 8px;
+        color: #333;
     }
 
 .subtitle {
     text-align: center;
     color: #777;
     margin-bottom: 25px;
-    font-size: 14px;
 }
 
 .form-group {
-    margin-bottom: 16px;
+    margin-bottom: 18px;
 }
 
     .form-group label {
         display: block;
-        margin-bottom: 6px;
-        color: #444;
+        margin-bottom: 8px;
         font-weight: 600;
+        color: #444;
     }
 
     .form-group input {
         width: 100%;
-        padding: 12px;
-        border: 1px solid #dcdcdc;
-        border-radius: 6px;
-        outline: none;
-        transition: 0.3s;
+        padding: 12px 45px 12px 12px;
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        font-size: 15px;
+        transition: .3s;
     }
 
         .form-group input:focus {
-            border-color: #0d6efd;
+            outline: none;
+            border-color: #4facfe;
+            box-shadow: 0 0 5px rgba(79,172,254,.3);
         }
+
+.password-box {
+    position: relative;
+}
+
+.toggle-password {
+    position: absolute;
+    right: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    cursor: pointer;
+    color: #777;
+    font-size: 18px;
+}
+
+    .toggle-password:hover {
+        color: #000;
+    }
 
 .btn-signup {
     width: 100%;
     padding: 12px;
-    background: #0d6efd;
-    color: #fff;
+    background: #4facfe;
     border: none;
-    border-radius: 6px;
+    color: white;
+    border-radius: 8px;
     cursor: pointer;
     font-size: 16px;
-    transition: 0.3s;
+    font-weight: 600;
+    transition: .3s;
 }
 
     .btn-signup:hover {
-        background: #0b5ed7;
+        background: #1d8cf8;
     }
 
 .login-link {
-    text-align: center;
     margin-top: 18px;
-    font-size: 14px;
+    text-align: center;
 }
 
     .login-link a {
         text-decoration: none;
-        color: #0d6efd;
+        color: #007bff;
         font-weight: 600;
     }
 
-.validation-summary-errors,
-.field-validation-error {
-    color: #dc3545;
-    font-size: 13px;
-}
-
-@media (max-width: 576px) {
-
-    .signup-card {
-        padding: 25px;
-    }
-
-        .signup-card h2 {
-            font-size: 24px;
+        .login-link a:hover {
+            text-decoration: underline;
         }
 
-    .form-group input {
-        padding: 10px;
-    }
-
-    .btn-signup {
-        padding: 11px;
-    }
-}
-
-
-/* Add these styles to your existing CSS file */
-
-/* Validation styles */
-.has-error input {
-    border-color: #dc3545 !important;
-}
-
-.has-success input {
-    border-color: #28a745 !important;
-}
-
-.input-validation-error {
-    border-color: #dc3545 !important;
-}
-
-.input-validation-valid {
-    border-color: #28a745 !important;
-}
-
 .field-validation-error {
-    color: #dc3545;
-    font-size: 0.875rem;
+    color: red;
+    font-size: 13px;
     display: block;
-    margin-top: 0.25rem;
+    margin-top: 5px;
 }
 
-.validation-summary-errors {
-    color: #dc3545;
-    padding: 0.75rem 1.25rem;
-    margin-bottom: 1rem;
-    border: 1px solid #f5c6cb;
-    border-radius: 0.25rem;
-    background-color: #f8d7da;
-}
-
-/* Password strength indicator */
-.password-strength {
-    margin-top: 0.5rem;
-    padding: 0.25rem 0.5rem;
-    border-radius: 4px;
-    font-size: 0.875rem;
-}
-
-    .password-strength .weak {
-        color: #dc3545;
-        font-weight: bold;
-    }
-
-    .password-strength .medium {
-        color: #ffc107;
-        font-weight: bold;
-    }
-
-    .password-strength .strong {
-        color: #28a745;
-        font-weight: bold;
-    }
-
-/* Form text helper */
-.form-text {
+.password-info {
     display: block;
-    margin-top: 0.25rem;
-    font-size: 0.875rem;
-    color: #6c757d;
+    margin-top: 8px;
+    color: #666;
+    font-size: 12px;
 }
 
-/* Disabled button state */
-.btn-signup:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
+    .password-info ul {
+        margin-left: 18px;
+        margin-top: 5px;
+    }
+
+    .password-info li {
+        margin-bottom: 3px;
+    }
+
+input.input-validation-error {
+    border: 1px solid red;
+}
+
+@media (max-width: 500px) {
+
+    .signup-card {
+        width: 100%;
+        padding: 25px;
+    }
 }
