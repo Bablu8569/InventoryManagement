@@ -338,22 +338,24 @@
                 floatingFilter: true, 
                 sortable: true 
             },
-            { 
-                headerName: "Created Date", 
-                field: "createdDate", 
-                width: 130, 
-                filter: 'agDateColumnFilter', 
-                floatingFilter: true, 
-                sortable: true, 
-                valueFormatter: (p) => {
-                    try {
-                        return p.value ? new Date(p.value).toLocaleDateString() : '';
-                    } catch (error) {
-                        console.error('Date formatter error:', error);
-                        return '';
-                    }
-                }
-            },
+            {
+    headerName: "Created Date",
+    field: "createdDate",
+    width: 150,
+    sortable: true,
+    filter: 'agDateColumnFilter',
+    floatingFilter: true,
+
+    valueFormatter: (params) => {
+        return params.value ? params.value.split('T')[0] : '';
+    },
+
+    filterValueGetter: (params) => {
+        return params.data.createdDate
+            ? new Date(params.data.createdDate)
+            : null;
+    }
+},
             { 
                 headerName: "Actions", 
                 cellRenderer: ActionCellRenderer, 
