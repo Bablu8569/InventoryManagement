@@ -71,9 +71,12 @@
         align-items: center;
     }
     .close-alert { background: none; border: none; font-size: 1.2rem; font-weight: bold; cursor: pointer; color: #155724; }
-    @@media (max-width: 768px) { .chart-board { grid-template-columns: 1fr; } .dashboard-stats { grid-template-columns: repeat(2, 1fr); } }
+    
+    @@media (max-width: 768px) { 
+        .chart-board { grid-template-columns: 1fr; } 
+        .dashboard-stats { grid-template-columns: repeat(2, 1fr); } 
+    }
 
-     /* ===== iPad Pro (1024px - 1366px) ===== */
     @@media (min-width: 1024px) and (max-width: 1366px) {
         .dashboard-stats {
             grid-template-columns: repeat(4, 1fr) !important;
@@ -91,7 +94,6 @@
         }
     }
 
-    /* ===== iPad Portrait Mode ===== */
     @@media (min-width: 768px) and (max-width: 1024px) and (orientation: portrait) {
         .dashboard-stats {
             grid-template-columns: repeat(2, 1fr) !important;
@@ -107,7 +109,6 @@
         }
     }
 
-    /* ===== iPad Landscape Mode ===== */
     @@media (min-width: 768px) and (max-width: 1024px) and (orientation: landscape) {
         .dashboard-stats {
             grid-template-columns: repeat(4, 1fr) !important;
@@ -122,7 +123,6 @@
             max-height: 250px !important;
         }
     }
-
 </style>
 
 <h2>Dashboard</h2>
@@ -132,6 +132,14 @@
     <div class="alert-success-custom" id="successAlert">
         <span>✅ @TempData["LoginSuccess"]</span>
         <button type="button" class="close-alert" onclick="document.getElementById('successAlert').style.display='none';">&times;</button>
+    </div>
+}
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        @TempData["Error"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
 }
 
@@ -204,16 +212,14 @@
 @section Scripts {
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script>
-        
         // 1. DATA FROM SERVER
-        
         const categoryNames = @Html.Raw(Json.Serialize(Model.CategoryNames));
         const productCounts = @Html.Raw(Json.Serialize(Model.CategoryProductCounts));
         const productNames = @Html.Raw(Json.Serialize(Model.ProductNames));
         const productPrices = @Html.Raw(Json.Serialize(Model.ProductPrices));
         const productQuantities = @Html.Raw(Json.Serialize(Model.ProductQuantities));
         
-        // ✅ Low Stock Data – Merge duplicates
+        // Low Stock Data
         const lowStockNamesRaw = @Html.Raw(Json.Serialize(Model.LowStockProductNames));
         const lowStockQtysRaw = @Html.Raw(Json.Serialize(Model.LowStockQuantities));
         
@@ -236,35 +242,36 @@
         const lowStockNames = lowStockData.names;
         const lowStockQtys = lowStockData.quantities;
 
-        // ✅ Transaction Data – FIXED (previously missing)
+        // Transaction Data
         const transNames = @Html.Raw(Json.Serialize(Model.TransactionProductNames));
         const transQtys = @Html.Raw(Json.Serialize(Model.TransactionQuantities));
 
+        console.log('✅ Category Data:', categoryNames, productCounts);
         console.log('✅ Transaction Data:', transNames, transQtys);
 
-       
         // 2. BASE URLs
-        
         const categoryUrl = '@Url.Action("Index", "Category")';
         const productUrl = '@Url.Action("Index", "Product")';
         const stockUrl = '@Url.Action("Index", "Stock")';
         const todayDate = '@DateTime.Now.ToString("yyyy-MM-dd")';
 
-       
         // 3. REDIRECT FUNCTIONS
+        function goToCategory(cat) { 
+            window.location.href = categoryUrl + '?search=' + encodeURIComponent(cat); 
+        }
         
-        function goToCategory(cat) { window.location.href = categoryUrl + '?search=' + encodeURIComponent(cat); }
-        function goToProductByName(prod) { window.location.href = productUrl + '?productName=' + encodeURIComponent(prod); }
-        function goToTransactions() { window.location.href = stockUrl + '?date=' + todayDate; }
+        function goToProductByName(prod) { 
+            window.location.href = productUrl + '?productName=' + encodeURIComponent(prod); 
+        }
+        
+        function goToTransactions() { 
+            window.location.href = stockUrl + '?date=' + todayDate; 
+        }
 
-        
         // 4. CHART INSTANCES
-        
         let productChart = null;
 
-        
         // 5. RENDER PRODUCT CHART
-        
         function renderProductChart(metric) {
             const canvas = document.getElementById('productChart');
             if (!canvas) return;
@@ -297,43 +304,84 @@
                             goToProductByName(product);
                         }
                     },
-                    scales: { y: { beginAtZero: true, title: { display: true, text: label } } },
+                    scales: { 
+                        y: { 
+                            beginAtZero: true, 
+                            title: { display: true, text: label } 
+                        } 
+                    },
                     responsive: true
                 }
             });
         }
 
-        
         // 6. CREATE CATEGORY CHART
-        
         function createCategoryChart() {
             const canvas = document.getElementById('categoryChart');
             if (!canvas) return;
+            
+            if (!categoryNames || categoryNames.length === 0) {
+                console.log('⚠️ No category data available');
+                return;
+            }
+            
+            // Generate colors for each category
+            const colors = categoryNames.map(() => {
+                const r = Math.floor(Math.random() * 200) + 55;
+                const g = Math.floor(Math.random() * 200) + 55;
+                const b = Math.floor(Math.random() * 200) + 55;
+                return `rgb(${r}, ${g}, ${b})`;
+            });
+            
             new Chart(canvas, {
                 type: 'bar',
                 data: { 
-                    labels: categoryNames, 
+                    labels: categoryNames,
                     datasets: [{ 
                         label: 'Number of Products', 
                         data: productCounts, 
-                        backgroundColor: '#3498db' 
+                        backgroundColor: colors
                     }] 
                 },
                 options: {
-                    onClick: (e, active) => { 
-                        if (active.length) goToCategory(categoryNames[active[0].index]); 
+                    // onClick: (e, active) => {
+                    //     if (active.length) {
+                    //         const category = categoryNames[active[0].index];
+                    //         goToCategory(category);
+                    //     }
+                    // },
+                    onClick: (e, active) => {
+                       if (active.length) {
+                           const category = categoryNames[active[0].index];
+                           window.location.href = productUrl + '?categoryName=' + encodeURIComponent(category);
+                       }
+                   },
+                    scales: { 
+                        y: { 
+                            beginAtZero: true, 
+                            title: { display: true, text: 'Product Count' } 
+                        } 
                     },
-                    scales: { y: { beginAtZero: true, title: { display: true, text: 'Product Count' } } }
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
                 }
             });
         }
 
-        
         // 7. CREATE LOW STOCK CHART
-        
         function createLowStockChart() {
             const canvas = document.getElementById('lowStockChart');
             if (!canvas) return;
+            
+            if (!lowStockNames || lowStockNames.length === 0) {
+                console.log('⚠️ No low stock data available');
+                return;
+            }
+            
             new Chart(canvas, {
                 type: 'bar',
                 data: { 
@@ -351,19 +399,22 @@
                             window.location.href = productUrl + '?minQuantity=' + quantity + '&maxQuantity=' + quantity;
                         }
                     },
-                    scales: { y: { beginAtZero: true, title: { display: true, text: 'Quantity' } } }
+                    scales: { 
+                        y: { 
+                            beginAtZero: true, 
+                            title: { display: true, text: 'Quantity' } 
+                        } 
+                    },
+                    responsive: true
                 }
             });
         }
 
-        
-        // 8. CREATE TRANSACTION CHART (FIXED)
-        
+        // 8. CREATE TRANSACTION CHART
         function createTransactionChart() {
             const canvas = document.getElementById('transactionChart');
             if (!canvas) return;
             
-            // ✅ Check if data exists
             if (!transNames || transNames.length === 0) {
                 console.log('⚠️ No transaction data available');
                 return;
@@ -381,23 +432,24 @@
                 },
                 options: {
                     onClick: () => goToTransactions(),
-                    scales: { y: { beginAtZero: true, title: { display: true, text: 'Total Quantity' } } },
+                    scales: { 
+                        y: { 
+                            beginAtZero: true, 
+                            title: { display: true, text: 'Total Quantity' } 
+                        } 
+                    },
                     responsive: true
                 }
             });
         }
 
-        
         // 9. INITIALIZE CHARTS
-        
         if (document.getElementById('categoryChart')) createCategoryChart();
         if (document.getElementById('productChart')) renderProductChart('price');
         if (document.getElementById('lowStockChart')) createLowStockChart();
         if (document.getElementById('transactionChart')) createTransactionChart();
 
-        
         // 10. TOGGLE BUTTONS
-        
         const togglePrice = document.getElementById('toggleAvgPrice');
         const toggleQty = document.getElementById('toggleTotalQty');
         

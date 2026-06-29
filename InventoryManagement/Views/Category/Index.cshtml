@@ -261,22 +261,24 @@
                 },
                 filterParams: { caseSensitive: false, filterOptions: ['contains'] }
             },
-            { 
-                headerName: "Created Date", 
-                field: "createdDate", 
-                sortable: true, 
-                floatingFilter: true, 
-                filter: 'agDateColumnFilter',
-                width: 150,
-                valueFormatter: (params) => {
-                    try {
-                        return params.value ? new Date(params.value).toLocaleDateString() : '';
-                    } catch (error) {
-                        console.error('Date formatter error:', error);
-                        return '';
-                    }
-                }
-            },
+          {
+    headerName: "Created Date",
+    field: "createdDate",
+    width: 150,
+    sortable: true,
+    filter: 'agDateColumnFilter',
+    floatingFilter: true,
+
+    valueFormatter: (params) => {
+        return params.value ? params.value.split('T')[0] : '';
+    },
+
+    filterValueGetter: (params) => {
+        return params.data.createdDate
+            ? new Date(params.data.createdDate)
+            : null;
+    }
+},
             { 
                 headerName: "Actions", 
                 field: "actions",
