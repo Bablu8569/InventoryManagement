@@ -109,7 +109,8 @@ namespace InventoryManagement.Controllers
         public IActionResult Logout()
         {
             HttpContext.Session.Clear();
-            TempData.Clear();
+            Response.Cookies.Delete(".AspNetCore.Session");
+            //TempData.Clear();
             return RedirectToAction("Login");
         }
 
@@ -142,7 +143,7 @@ namespace InventoryManagement.Controllers
 
                 if (users == null || users.Count == 0)
                 {
-                    return Json(new { success = false, message = "No users found." });
+                    return Json(new { success = false, message = "Role Update Sucessfully." });
                 }
 
                 return Json(new { success = true, data = users });
