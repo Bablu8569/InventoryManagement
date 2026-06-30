@@ -141,18 +141,30 @@ namespace InventoryManagement.Controllers
 
                 if (message == "Product added successfully!")
                 {
-                    TempData["Success"] = message;
-                    return RedirectToAction("Index");
-                }
+                    ViewBag.Success = message;
 
-                ModelState.AddModelError("", message);
+                    // Dropdown reload
+                    ViewBag.Categories = CategoryModel.GetAll(_db);
+
+                    // Form clear
+                    return View(new ProductModel());
+                }
+                else
+                {
+                    ViewBag.Categories = CategoryModel.GetAll(_db);
+
+                    ModelState.AddModelError("", message);
+                    return View(model);
+                }
             }
             catch (SqlException ex)
             {
+                ViewBag.Categories = CategoryModel.GetAll(_db);
                 ModelState.AddModelError("", "Database error: " + ex.Message);
             }
             catch (Exception ex)
             {
+                ViewBag.Categories = CategoryModel.GetAll(_db);
                 ModelState.AddModelError("", "Error: " + ex.Message);
             }
 
@@ -376,79 +388,6 @@ namespace InventoryManagement.Controllers
             }
         }
 
-        // ========== EXPORT PRODUCTS TO CSV ==========
-        [HttpGet]
-        public IActionResult ExportCsv()
-        {
-            try
-            {
-                if (!IsUserLoggedIn())
-                    return RedirectToAction("Login", "Account");
-
-                var products = new List<ProductModel>();
-                string connStr = _configuration.GetConnectionString("DefaultConnection");
-
-                if (string.IsNullOrEmpty(connStr))
-                {
-                    TempData["Error"] = "Database connection string is missing.";
-                    return RedirectToAction("Index");
-                }
-
-                using (SqlConnection conn = new SqlConnection(connStr))
-                {
-                    conn.Open();
-                    using (SqlCommand cmd = new SqlCommand("USP_GetProducts", conn))
-                    {
-                        cmd.CommandType = CommandType.StoredProcedure;
-                        using (var reader = cmd.ExecuteReader())
-                        {
-                            while (reader.Read())
-                            {
-                                products.Add(new ProductModel
-                                {
-                                    ProductId = Convert.ToInt32(reader["ProductId"]),
-                                    ProductName = reader["ProductName"]?.ToString() ?? "",
-                                    CategoryName = reader["CategoryName"]?.ToString() ?? "",
-                                    Price = Convert.ToDecimal(reader["Price"]),
-                                    Quantity = Convert.ToInt32(reader["Quantity"]),
-                                    CreatedDate = Convert.ToDateTime(reader["CreatedDate"])
-                                });
-                            }
-                        }
-                    }
-                }
-
-                if (products == null || products.Count == 0)
-                {
-                    TempData["Error"] = "No products found to export.";
-                    return RedirectToAction("Index");
-                }
-
-                string[] headers = { "ID", "Product Name", "Category", "Price", "Quantity", "Created Date" };
-
-                string csvData = CsvHelper.ConvertToCsv(products, headers, item => new string[]
-                {
-                    item.ProductId.ToString(),
-                    item.ProductName,
-                    item.CategoryName ?? "",
-                    item.Price.ToString("0.00"),
-                    item.Quantity.ToString(),
-                    item.CreatedDate.ToString("yyyy-MM-dd")
-                });
-
-                byte[] bytes = Encoding.UTF8.GetBytes(csvData);
-                return File(bytes, "text/csv", "Products_" + DateTime.Now.ToString("yyyy-MM-dd") + ".csv");
-            }
-            catch (SqlException ex)
-            {
-                TempData["Error"] = "Database error exporting CSV: " + ex.Message;
-                return RedirectToAction("Index");
-            }
-            catch (Exception ex)
-            {
-                TempData["Error"] = "Error exporting CSV: " + ex.Message;
-                return RedirectToAction("Index");
-            }
-        }
+        
     }
 }

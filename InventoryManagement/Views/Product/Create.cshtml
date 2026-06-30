@@ -4,6 +4,14 @@
     var categories = ViewBag.Categories as List<CategoryModel>;
 }
 <h2>Add Product</h2>
+@if (ViewBag.Success != null)
+{
+    <div class="alert alert-success">
+        @ViewBag.Success
+    </div>
+}
+
+<div asp-validation-summary="All" class="alert alert-danger"></div>
 <form method="post">
     <div class="form-group">
         <label asp-for="ProductName"></label>
