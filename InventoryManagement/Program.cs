@@ -39,6 +39,16 @@ app.UseRouting();
 
 app.UseSession();
 
+app.Use(async (context, next) =>
+{
+    context.Response.Headers["Cache-Control"] = "no-cache,no-store,most-revalidate";
+    context.Response.Headers["pragma"] = "no-cache";
+    context.Response.Headers["Expires"] = "0";
+
+    await next();
+
+});
+
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Account}/{action=Login}/{id?}");
