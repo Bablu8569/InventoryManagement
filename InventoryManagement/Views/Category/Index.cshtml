@@ -1,9 +1,9 @@
-﻿@{
+﻿@model List<InventoryManagement.Models.CategoryModel>
+@{
     ViewData["Title"] = "Categories";
 }
 
 <style>
-    /* Action buttons inside grid (Edit / Delete) */
     .grid-action-btn {
         display: inline-flex;
         align-items: center;
@@ -43,14 +43,12 @@
         -moz-appearance: none;
         appearance: none;
     }
-    /* Center the action column content */
     .ag-cell[col-id="actions"] {
         display: flex !important;
         justify-content: center !important;
         align-items: center !important;
     }
 
-    /* Circular plus button */
     .btn-add-category-icon {
         display: inline-flex;
         align-items: center;
@@ -73,7 +71,6 @@
         color: white;
     }
 
-    /* Export Button Style */
     .btn-export {
         display: inline-flex;
         align-items: center;
@@ -96,7 +93,6 @@
         transform: scale(1.02);
     }
 
-    /* Top bar: heading left, buttons right */
     .top-bar {
         display: flex;
         justify-content: space-between;
@@ -111,7 +107,6 @@
         gap: 10px;
     }
 
-    /* Hide action column for normal user */
     .hide-actions .ag-cell[col-id="actions"] {
         display: none !important;
     }
@@ -120,11 +115,9 @@
 <input type="hidden" id="role" value="@Context.Session.GetString("Role")" />
 
 <div class="container mt-4">
-    <!-- Single Top Bar with Export CSV on Right -->
     <div class="top-bar">
         <h2>📂 Categories</h2>
         <div class="plus-wrapper">
-            <!-- Export CSV Button (Right Side) -->
             <a href="@Url.Action("ExportCsv")" class="btn-export">
                 📥 Export CSV
             </a>
@@ -151,6 +144,14 @@
         </div>
     }
 
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
     <div id="categoryGrid" style="height: 500px; width: 100%;" class="ag-theme-alpine"></div>
 </div>
 
@@ -161,7 +162,6 @@
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
     <script>
-        // ✅ Action Cell Renderer – Hide Edit/Delete for Normal User
         class ActionCellRenderer {
             init(params) {
                 try {
@@ -175,7 +175,6 @@
 
                     const isNormalUser = (role == "2");
 
-                    // ---------- Edit Button ----------
                     const editBtn = document.createElement('a');
                     editBtn.className = 'grid-action-btn edit-btn';
                     editBtn.innerHTML = '✏️ Edit';
@@ -186,7 +185,6 @@
                         editBtn.style.display = 'none';
                     }
 
-                    // ---------- Delete Button ----------
                     const deleteBtn = document.createElement('button');
                     deleteBtn.className = 'grid-action-btn delete-btn';
                     deleteBtn.innerHTML = '🗑️ Delete';
@@ -245,6 +243,15 @@
                 filterParams: { caseSensitive: false, filterOptions: ['contains'] }
             },
             { 
+                headerName: "Description", 
+                field: "description", 
+                floatingFilter: true, 
+                filter: 'agTextColumnFilter',
+                sortable: true, 
+                flex: 2,
+                filterParams: { caseSensitive: false, filterOptions: ['contains'] }
+            },
+            { 
                 headerName: "Status", 
                 field: "isActive", 
                 sortable: true, 
@@ -261,8 +268,8 @@
                 },
                 filterParams: { caseSensitive: false, filterOptions: ['contains'] }
             },
-          {
-    headerName: "Created Date",
+            {
+                 headerName: "Created Date",
     field: "createdDate",
     width: 150,
     sortable: true,
@@ -277,8 +284,8 @@
         return params.data.createdDate
             ? new Date(params.data.createdDate)
             : null;
-    }
-},
+                }
+            },
             { 
                 headerName: "Actions", 
                 field: "actions",
@@ -305,17 +312,6 @@
             }
         };
 
-        // Helper: get URL parameter by name
-        function getUrlValue(name) {
-            try {
-                const urlParams = new URLSearchParams(window.location.search);
-                return urlParams.get(name);
-            } catch (error) {
-                console.error('Error getting URL parameter:', error);
-                return null;
-            }
-        }
-
         function loadGridData() {
             try {
                 $.ajax({
@@ -326,18 +322,6 @@
                         try {
                             if (response.success && response.data) {
                                 gridOptions.api.setRowData(response.data);
-                                
-                                const searchValue = getUrlValue("search") || getUrlValue("categoryName");
-                                if (searchValue) {
-                                    gridOptions.api.setFilterModel({
-                                        categoryName: {
-                                            filterType: 'text',
-                                            type: 'contains',
-                                            filter: searchValue
-                                        }
-                                    });
-                                    gridOptions.api.onFilterChanged();
-                                }
                             } else {
                                 alert('Failed to load categories: ' + (response.message || 'Unknown error'));
                             }
