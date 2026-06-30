@@ -124,11 +124,16 @@ namespace InventoryManagement.Controllers
 
                 if (message == "Category added successfully.")
                 {
-                    TempData["Success"] = message;
-                    return RedirectToAction("Index");
-                }
+                    ViewBag.Success = message;
 
-                ModelState.AddModelError("", message);
+                    // Form clear ho jayega
+                    return View(new CategoryModel());
+                }
+                else
+                {
+                    ModelState.AddModelError("", message);
+                    return View(model);
+                }
             }
             catch (SqlException ex)
             {
@@ -141,7 +146,6 @@ namespace InventoryManagement.Controllers
 
             return View(model);
         }
-
         // ================= EDIT GET =================
 
         [HttpGet]
@@ -316,79 +320,6 @@ namespace InventoryManagement.Controllers
         }
 
         // ========== EXPORT CATEGORIES TO CSV ==========
-        [HttpGet]
-        public IActionResult ExportCsv()
-        {
-            try
-            {
-                if (!IsUserLoggedIn())
-                    return RedirectToAction("Login", "Account");
-
-                var categories = new List<CategoryModel>();
-                string connStr = _configuration.GetConnectionString("DefaultConnection");
-
-                if (string.IsNullOrEmpty(connStr))
-                {
-                    TempData["Error"] = "Database connection string is missing.";
-                    return RedirectToAction("Index");
-                }
-
-                using (SqlConnection conn = new SqlConnection(connStr))
-                {
-                    conn.Open();
-                    using (SqlCommand cmd = new SqlCommand("sp_GetAllCategories", conn))
-                    {
-                        cmd.CommandType = CommandType.StoredProcedure;
-                        using (var reader = cmd.ExecuteReader())
-                        {
-                            while (reader.Read())
-                            {
-                                categories.Add(new CategoryModel
-                                {
-                                    CategoryId = Convert.ToInt32(reader["CategoryId"]),
-                                    CategoryName = reader["CategoryName"]?.ToString() ?? "",
-                                    Description = reader["Description"]?.ToString() ?? "",
-                                    IsActive = Convert.ToBoolean(reader["IsActive"]),
-                                    CreatedDate = Convert.ToDateTime(reader["CreatedDate"])
-                                });
-                            }
-                        }
-                    }
-                }
-
-                if (categories == null || categories.Count == 0)
-                {
-                    TempData["Error"] = "No categories found to export.";
-                    return RedirectToAction("Index");
-                }
-
-                // Headers as per your table
-                string[] headers = {
-                    "Category Name",
-                    "Status",
-                    "Created Date"
-                };
-
-                string csvData = CsvHelper.ConvertToCsv(categories, headers, item => new string[]
-                {
-                    item.CategoryName,
-                    item.IsActive ? "Active" : "Inactive",
-                    item.CreatedDate.ToString("dd-MM-yyyy")
-                });
-
-                byte[] bytes = Encoding.UTF8.GetBytes(csvData);
-                return File(bytes, "text/csv", "Categories_" + DateTime.Now.ToString("yyyy-MM-dd") + ".csv");
-            }
-            catch (SqlException ex)
-            {
-                TempData["Error"] = "Database error exporting CSV: " + ex.Message;
-                return RedirectToAction("Index");
-            }
-            catch (Exception ex)
-            {
-                TempData["Error"] = "Error exporting CSV: " + ex.Message;
-                return RedirectToAction("Index");
-            }
-        }
+      
     }
 }
