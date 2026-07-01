@@ -15,24 +15,24 @@ namespace InventoryManagement.Models
         [Required(ErrorMessage = "Username is required.")]
         [StringLength(20, ErrorMessage = "Username cannot be more than 20 characters.")]
         [RegularExpression(@"^[a-zA-Z0-9_]+$", ErrorMessage = "Username can contain only letters, numbers, and underscores.")]
-        public string Username { get; set; }
+        public string Username { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Email is required.")]
         [EmailAddress(ErrorMessage = "Enter a valid email address.")]
         [RegularExpression(@"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$",
             ErrorMessage = "Enter a valid email address.")]
-        public string Email { get; set; }
+        public string Email { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Password is required.")]
         [RegularExpression(
             @"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$",
             ErrorMessage = "Password must be at least 8 characters and contain an uppercase letter, lowercase letter, number, and special character."
         )]
-        public string Password { get; set; }
+        public string Password { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Confirm Password is required.")]
         [Compare("Password", ErrorMessage = "Passwords do not match.")]
-        public string ConfirmPassword { get; set; }
+        public string ConfirmPassword { get; set; } = string.Empty;
 
         public string Role { get; set; } = "2";
         public bool IsActive { get; set; } = true;
@@ -168,25 +168,34 @@ namespace InventoryManagement.Models
 
         // ========== UPDATE USER ROLE ==========
         public static (bool Success, string Message) UpdateUserRole(
-            int userId,
-            string newRole,
-            DatabaseHelper db,
-            string currentUserId = null)
+    int userId,
+    string newRole,
+    DatabaseHelper db,
+    string? currentUserId = null)
         {
             try
             {
-                // Check if user is Admin
                 string connStr = db.GetConnection().ConnectionString;
+
                 using (SqlConnection conn = new SqlConnection(connStr))
                 {
                     conn.Open();
 
-                    // Check if user is Admin (Role = 1)
+                    // Check if user exists and get current role
                     string checkSql = "SELECT Role FROM Users WHERE UserId = @UserId";
+
                     using (SqlCommand checkCmd = new SqlCommand(checkSql, conn))
                     {
                         checkCmd.Parameters.AddWithValue("@UserId", userId);
-                        string userRole = checkCmd.ExecuteScalar()?.ToString() ?? "2";
+
+                        object? result = checkCmd.ExecuteScalar();
+
+                        if (result == null)
+                        {
+                            return (false, "User not found.");
+                        }
+
+                        string userRole = result.ToString()!;
 
                         if (userRole == "1")
                         {
@@ -200,17 +209,15 @@ namespace InventoryManagement.Models
                         cmd.CommandType = CommandType.StoredProcedure;
                         cmd.Parameters.AddWithValue("@userid", userId);
                         cmd.Parameters.AddWithValue("@role", newRole);
-                        int rowsAffected = cmd.ExecuteNonQuery();
 
-                        if (rowsAffected > 0)
-                        {
-                            bool isCurrentUser = currentUserId != null && currentUserId == userId.ToString();
-                            return (true, "✅ Role updated successfully!" + (isCurrentUser ? " Your role has been changed." : ""));
-                        }
-                        else
-                        {
-                            return (false, "User not found.");
-                        }
+                        cmd.ExecuteNonQuery();
+
+                        bool isCurrentUser = currentUserId != null &&
+                                             currentUserId == userId.ToString();
+
+                        return (true,
+                            "✅ Role updated successfully!" +
+                            (isCurrentUser ? " Your role has been changed." : ""));
                     }
                 }
             }
