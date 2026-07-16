@@ -118,9 +118,11 @@
     <div class="top-bar">
         <h2>📂 Categories</h2>
         <div class="plus-wrapper">
-            <a href="@Url.Action("ExportCsv")" class="btn-export">
-                📥 Export CSV
-            </a>
+          <button class="btn btn-success"
+            onclick="exportCSV()">
+        <i class="bi bi-file-earmark-excel"></i>
+        Export CSV
+    </button>
             
             @{
                 var role = Context.Session.GetString("Role");
@@ -356,6 +358,15 @@
                 console.error('Error initializing grid:', error);
                 alert('Error loading categories grid.');
             }
+         });
+       function exportCSV() {
+      if (gridOptions.api) {
+        gridOptions.api.exportDataAsCsv({
+            fileName: "CategoryReport.csv"
         });
+    } else {
+        alert("Grid is not ready yet.");
+    }
+}
     </script>
 }

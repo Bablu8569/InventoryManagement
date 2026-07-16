@@ -168,9 +168,11 @@
         <input type="hidden" id="role" value="@Context.Session.GetString("Role")" />
         <div class="header-actions">
             <!-- Export CSV Button -->
-            <a href="@Url.Action("ExportCsv")" class="btn-export">
-                📥 Export CSV
-            </a>
+            <button class="btn btn-success"
+            onclick="exportCSV()">
+        <i class="bi bi-file-earmark-excel"></i>
+        Export CSV
+    </button>
             
             @{
                 var role = Context.Session.GetString("Role");
@@ -284,6 +286,7 @@
                     console.error('Error in ActionCellRenderer:', error);
                 }
             }
+
             getGui() {
                 return this.eGui;
             }
@@ -444,6 +447,16 @@
                                     filterModel.price = priceFilter;
                                 }
 
+                                 const lowStock = getUrlValue("lowStock");
+
+                                  if (lowStock === "true") {
+                                  filterModel.quantity = {
+                                  filterType: 'number',
+                                  type: 'lessThanOrEqual',
+                                  filter: 5
+                            };
+                        }
+
                                 // 5. Quantity – EXACT MATCH
                                 const minQty = getUrlValue("minQuantity");
                                 const maxQty = getUrlValue("maxQuantity");
@@ -530,5 +543,14 @@
                 alert('Error loading products grid.');
             }
         });
+        function exportCSV() {
+      if (gridOptions.api) {
+        gridOptions.api.exportDataAsCsv({
+            fileName: "ProductReport.csv"
+        });
+    } else {
+        alert("Grid is not ready yet.");
+    }
+}
     </script>
 }

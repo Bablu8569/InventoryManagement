@@ -2,7 +2,21 @@
 @{
     ViewData["Title"] = "Add Category";
 }
+
+<style>
+    .action-btn {
+        width: 90px;
+        height: 38px;
+        line-height: 24px;
+        text-align: center;
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+    }
+</style>
+
 <h2>Add Category</h2>
+
 @if (ViewBag.Success != null)
 {
     <div class="alert alert-success">
@@ -10,21 +24,27 @@
     </div>
 }
 
-<div asp-validation-summary="All" class="alert alert-danger"></div>
+<div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+
 <form method="post">
     <div class="form-group">
         <label asp-for="CategoryName"></label>
         <input asp-for="CategoryName" />
         <span asp-validation-for="CategoryName"></span>
     </div>
-    <div class="form-group" style="display: flex; align-items: center; gap: 10px;">
-        <label asp-for="IsActive" style="margin-bottom: 0;"></label>
-        <input asp-for="IsActive" type="checkbox" style="width: auto; margin: 0;" />
+
+    <div class="form-group" style="display:flex; align-items:center; gap:10px;">
+        <label asp-for="IsActive" style="margin-bottom:0;"></label>
+        <input asp-for="IsActive" type="checkbox" style="width:auto; margin:0;" />
         <span asp-validation-for="IsActive"></span>
     </div>
-    <button type="submit" class="btn btn-success">Save</button>
-    <a href="@Url.Action("Index")" class="btn btn-primary">Cancel</a>
+
+    <div style="margin-top:15px;">
+        <button type="submit" class="btn btn-success action-btn">Save</button>
+        <a href="@Url.Action("Index")" class="btn btn-primary action-btn">Cancel</a>
+    </div>
 </form>
+
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
 }

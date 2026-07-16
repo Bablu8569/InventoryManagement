@@ -25,7 +25,7 @@ namespace InventoryManagement.Repositories
             }
         }
 
-        // ========== GET STOCK TRANSACTIONS ==========
+        // ========== GET STOCK TRANSACTIONS (Stored Procedure) ==========
         public List<StockTransactionModel> GetStockTransactions(
             DateTime? fromDate,
             DateTime? toDate
@@ -36,7 +36,6 @@ namespace InventoryManagement.Repositories
             try
             {
                 var ht = new Hashtable();
-
                 ht.Add("@FromDate", fromDate.HasValue ? (object)fromDate.Value : DBNull.Value);
                 ht.Add("@ToDate", toDate.HasValue ? (object)toDate.Value : DBNull.Value);
 
@@ -64,7 +63,6 @@ namespace InventoryManagement.Repositories
                     }
                     catch (Exception ex)
                     {
-                        // Log individual row error but continue processing
                         Console.WriteLine($"Error processing transaction row: {ex.Message}");
                     }
                 }
@@ -81,7 +79,7 @@ namespace InventoryManagement.Repositories
             return transactions;
         }
 
-        // ========== INSERT STOCK TRANSACTION ==========
+        // ========== INSERT STOCK TRANSACTION (Stored Procedure) ==========
         public (bool Success, string Message) InsertStockTransaction(
             StockTransactionModel model
         )
@@ -94,7 +92,6 @@ namespace InventoryManagement.Repositories
                 }
 
                 var ht = new Hashtable();
-
                 ht.Add("@ProductId", model.ProductId);
                 ht.Add("@TransactionType", model.TransactionType);
                 ht.Add("@Quantity", model.Quantity);
@@ -129,7 +126,7 @@ namespace InventoryManagement.Repositories
             }
         }
 
-        // ========== GET STOCK TRANSACTIONS BY PRODUCT ==========
+        // ========== GET STOCK TRANSACTIONS BY PRODUCT (Stored Procedure) ==========
         public List<StockTransactionModel> GetStockTransactionsByProduct(
             int productId
         )
@@ -186,7 +183,7 @@ namespace InventoryManagement.Repositories
             return transactions;
         }
 
-        // ========== GET DASHBOARD STATS ==========
+        // ========== GET DASHBOARD STATS (Stored Procedure) ==========
         public DashboardModel GetDashboardStats()
         {
             var stats = new DashboardModel();
@@ -236,11 +233,10 @@ namespace InventoryManagement.Repositories
 
                 var result = InsertStockTransaction(new StockTransactionModel
                 {
-                    ProductId = model.ProductId,
-                    Quantity = model.Quantity,
-                    TransactionType = model.TransactionType,
-                    TransactionDate = DateTime.Now,
-                    Remarks = model.Remarks
+                    ProductId = model.ProductId ?? 0,
+                    Quantity = model.Quantity ?? 0,
+                    TransactionType = model.TransactionType ?? "",
+                    Remarks = model.Remarks ?? ""
                 });
 
                 return result.Success;

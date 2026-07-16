@@ -39,28 +39,68 @@ namespace InventoryManagement.Models
         public DateTime? CreatedDate { get; set; }
 
         // ========== VALIDATE USER (LOGIN) ==========
-        public static UserModel? ValidateUser(string username, string password, DatabaseHelper db)
+        //public static UserModel? ValidateUser(string username, string password, DatabaseHelper db)
+        //{
+        //    Hashtable parameters = new Hashtable
+        //    {
+        //        { "@UserName", username },
+        //        { "@Password", password }
+        //    };
+
+        //    DataTable dt = db.ExecuteStoredProcedure("ValidateUser", parameters);
+
+        //    if (dt.Rows.Count > 0)
+        //    {
+        //        DataRow row = dt.Rows[0];
+        //        return new UserModel
+        //        {
+        //            UserId = Convert.ToInt32(row["UserId"]),
+        //            Username = row["Username"]?.ToString() ?? string.Empty,
+        //            Role = row["Role"]?.ToString() ?? "2"
+        //        };
+        //    }
+        //    return null;
+        //}
+
+        public static (UserModel? User, string Message) ValidateUser(string username, string password, DatabaseHelper db)
         {
-            Hashtable parameters = new Hashtable
-            {
-                { "@UserName", username },
-                { "@Password", password }
-            };
+            // Username check
+            Hashtable htUser = new Hashtable
+    {
+        { "@UserName", username }
+    };
 
-            DataTable dt = db.ExecuteStoredProcedure("ValidateUser", parameters);
+            DataTable dtUser = db.ExecuteStoredProcedure("USP_CheckUserName", htUser);
 
-            if (dt.Rows.Count > 0)
+            if (dtUser.Rows.Count == 0)
             {
-                DataRow row = dt.Rows[0];
-                return new UserModel
-                {
-                    UserId = Convert.ToInt32(row["UserId"]),
-                    Username = row["Username"]?.ToString() ?? string.Empty,
-                    Role = row["Role"]?.ToString() ?? "2"
-                };
+                return (null, "Username is incorrect.");
             }
 
-            return null;
+            // Password check
+            Hashtable htLogin = new Hashtable
+    {
+        { "@UserName", username },
+        { "@Password", password }
+    };
+
+            DataTable dt = db.ExecuteStoredProcedure("ValidateUser", htLogin);
+
+            if (dt.Rows.Count == 0)
+            {
+                return (null, "Password is incorrect.");
+            }
+
+            DataRow row = dt.Rows[0];
+
+            UserModel user = new UserModel
+            {
+                UserId = Convert.ToInt32(row["UserId"]),
+                Username = row["Username"]?.ToString() ?? "",
+                Role = row["Role"]?.ToString() ?? "2"
+            };
+
+            return (user, "Login Successful");
         }
 
         // ========== CREATE USER (SIGNUP) ==========

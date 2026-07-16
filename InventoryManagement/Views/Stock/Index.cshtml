@@ -11,6 +11,21 @@
 
 <div class="history-page">
     <h2>📜 Transaction History</h2>
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
 
     <!-- ✅ Filter section with date values -->
     <div class="filter-section">
@@ -45,35 +60,88 @@
         <div id="transactionGrid" class="ag-theme-alpine" style="height: 500px; width: 100%;"></div>
     }
 
-    <div class="back-link">
-        <a asp-controller="Dashboard" asp-action="Index">← Back to Dashboard</a>
-    </div>
+    @* <div class="btn btn-primary">
+        <button asp-controller="Dashboard" asp-action="Index"> Back to Dashboard</button>
+    </div> *@
 </div>
 
 <script>
-    // Pass the model data from server to JavaScript
+    // Pass Model Data to JavaScript
     const rowData = @Html.Raw(Json.Serialize(Model));
-     const dashboardDate = '@ViewBag.FilterDate';
+    const dashboardDate = '@ViewBag.FilterDate';
 
-    // Define column definitions
+    // AG Grid Columns
     const columnDefs = [
-    { headerName: "ID", field: "transactionId", width: 100, filter: 'agNumberColumnFilter', sortable: true },
-    { headerName: "Product", field: "productName", width: 200, filter: 'agTextColumnFilter', sortable: true },
-    { headerName: "Quantity", field: "quantity", width: 120, filter: 'agNumberColumnFilter', sortable: true },
+
+    {
+    headerName: "ID",
+    field: "transactionId",
+    width: 100,
+    sortable: true,
+    filter: 'agNumberColumnFilter'
+    },
+
+    {
+    headerName: "Product",
+    field: "productName",
+    width: 200,
+    sortable: true,
+    filter: 'agTextColumnFilter'
+    },
+
+    {
+    headerName: "Quantity",
+    field: "quantity",
+    width: 120,
+    sortable: true,
+    filter: 'agNumberColumnFilter',
+
+    valueGetter: (params) => {
+
+    if (params.data.transactionType === "In")
+    return "+" + params.data.quantity;
+
+    return "-" + params.data.quantity;
+    },
+
+    cellStyle: params => ({
+    color: params.data.transactionType === "In"
+    ? "green"
+    : "red",
+    fontWeight: "bold",
+    textAlign: "center"
+    })
+    },
+
+    {
+    headerName: "Running Stock",
+    field: "runningStock",
+    width: 150,
+    sortable: true,
+    filter: 'agNumberColumnFilter',
+    cellStyle: {
+    textAlign: "center",
+    fontWeight: "bold",
+    color: "#2563eb"
+    }
+    },
+
     {
     headerName: "Type",
     field: "transactionType",
-    width: 120,
-    filter: 'agTextColumnFilter',
+    width: 140,
     sortable: true,
+    filter: 'agTextColumnFilter',
+
     cellRenderer: (params) => {
     return params.value === "In"
     ? '<span class="type-in">Stock In</span>'
     : '<span class="type-out">Stock Out</span>';
     }
     },
+
     {
-    headerName: "Transation Date",
+    headerName: "Transaction Date",
     field: "transactionDate",
     width: 150,
     sortable: true,
@@ -81,7 +149,9 @@
     floatingFilter: true,
 
     valueFormatter: (params) => {
-    return params.value ? params.value.split('T')[0] : '';
+    return params.value
+    ? params.value.split('T')[0]
+    : '';
     },
 
     filterValueGetter: (params) => {
@@ -89,33 +159,28 @@
     ? new Date(params.data.transactionDate)
     : null;
     }
-    },
+    }
     ];
 
-    // Grid options – no pagination
+    // Grid Options
     const gridOptions = {
     columnDefs: columnDefs,
     rowData: rowData,
+
     defaultColDef: {
     sortable: true,
     resizable: true,
     filter: true,
     floatingFilter: true
     },
+
     pagination: false,
     animateRows: true,
     enableCellTextSelection: true,
     ensureDomOrder: true
     };
 
-  @*   // Initialize grid when page loads
-    document.addEventListener('DOMContentLoaded', () => {
-    const gridDiv = document.querySelector('#transactionGrid');
-    if (gridDiv) {
-    new agGrid.Grid(gridDiv, gridOptions);
-    }
-    });
- *@
+    // Initialize Grid
     document.addEventListener('DOMContentLoaded', () => {
 
     const gridDiv = document.querySelector('#transactionGrid');
@@ -126,7 +191,8 @@
 
     if (dashboardDate) {
 
-    const dateFilter = gridOptions.api.getFilterInstance('transactionDate');
+    const dateFilter =
+    gridOptions.api.getFilterInstance('transactionDate');
 
     dateFilter.setModel({
     type: 'equals',

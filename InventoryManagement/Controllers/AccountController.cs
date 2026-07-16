@@ -1,6 +1,7 @@
 ﻿using InventoryManagement.Helpers;
 using InventoryManagement.Models;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Data.SqlClient;
 using System;
 
 namespace InventoryManagement.Controllers
@@ -34,39 +35,92 @@ namespace InventoryManagement.Controllers
             return View();
         }
 
+        //[HttpPost]
+        //[ValidateAntiForgeryToken]
+        //public IActionResult Login(LoginModel model)
+        //{
+        //    if (!ModelState.IsValid)
+        //        return View(model);
+
+        //    try
+        //    {
+        //        var user = UserModel.ValidateUser(model.Username, model.Password, _db);
+
+        //        if (user != null)
+        //        {
+        //            HttpContext.Session.SetString("Username", user.Username);
+        //            HttpContext.Session.SetString("UserId", user.UserId.ToString());
+        //            HttpContext.Session.SetString("Role", user.Role);
+        //            HttpContext.Session.SetString("IsAdmin", (user.Role == "1").ToString());
+
+        //            TempData["LoginSuccess"] = "Welcome to Dashboard!";
+        //            return RedirectToAction("Index", "Dashboard");
+        //        }
+        //        else
+        //        {
+        //            ModelState.AddModelError(string.Empty, "Invalid username or password.");
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        ModelState.AddModelError(string.Empty, ex.Message);
+        //    }
+
+        //    return View(model);
+        //}
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult Login(LoginModel model)
         {
-            if (!ModelState.IsValid)
-                return View(model);
-
             try
             {
-                var user = UserModel.ValidateUser(model.Username, model.Password, _db);
-
-                if (user != null)
+                if (!ModelState.IsValid)
                 {
-                    HttpContext.Session.SetString("Username", user.Username);
-                    HttpContext.Session.SetString("UserId", user.UserId.ToString());
-                    HttpContext.Session.SetString("Role", user.Role);
-                    HttpContext.Session.SetString("IsAdmin", (user.Role == "1").ToString());
+                    return View(model);
+                }
+
+                var result = UserModel.ValidateUser(model.Username, model.Password, _db);
+
+                if (result.User != null)
+                {
+                    HttpContext.Session.SetString("Username", result.User.Username);
+                    HttpContext.Session.SetString("UserId", result.User.UserId.ToString());
+                    HttpContext.Session.SetString("Role", result.User.Role);
+                    HttpContext.Session.SetString("IsAdmin", (result.User.Role == "1").ToString());
 
                     TempData["LoginSuccess"] = "Welcome to Dashboard!";
                     return RedirectToAction("Index", "Dashboard");
                 }
+
+                // Show error below the respective field
+                if (result.Message == "Username is incorrect.")
+                {
+                    ModelState.AddModelError(nameof(model.Username), result.Message);
+                }
+                else if (result.Message == "Password is incorrect.")
+                {
+                    ModelState.AddModelError(nameof(model.Password), result.Message);
+                }
                 else
                 {
-                    ModelState.AddModelError(string.Empty, "Invalid username or password.");
+                    ModelState.AddModelError(string.Empty, result.Message);
                 }
+
+                return View(model);
+            }
+            catch (SqlException ex)
+            {
+                ModelState.AddModelError(string.Empty, "Database error: " + ex.Message);
+                return View(model);
             }
             catch (Exception ex)
             {
-                ModelState.AddModelError(string.Empty, ex.Message);
+                ModelState.AddModelError(string.Empty, "Error: " + ex.Message);
+                return View(model);
             }
-
-            return View(model);
         }
+
 
         // ========== SIGNUP ==========
         [HttpGet]

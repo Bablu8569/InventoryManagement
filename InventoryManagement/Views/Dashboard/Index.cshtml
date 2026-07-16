@@ -70,6 +70,14 @@
         justify-content: space-between;
         align-items: center;
     }
+    .bottom-buttons {
+    margin-top: 40px;
+    padding-left: 20px;   /* Left side shift */
+}
+
+.bottom-buttons .btn {
+    margin-right: 10px;
+}
     .close-alert { background: none; border: none; font-size: 1.2rem; font-weight: bold; cursor: pointer; color: #155724; }
     
     @@media (max-width: 768px) { 
@@ -157,10 +165,15 @@
         <h3>Low Stock Items</h3>
         <div class="number">@Model.LowStockCount</div>
     </div>
-    <div class="stat-card" onclick="location.href='@Url.Action("Index", "Stock")?date=@DateTime.Now.ToString("yyyy-MM-dd")'">
+  @*   <div class="stat-card" onclick="location.href='@Url.Action("Index", "Stock")?date=@DateTime.Now.ToString("yyyy-MM-dd")'">
         <h3>Today's Transactions</h3>
         <div class="number">@Model.TodayTransactions</div>
-    </div>
+    </div> *@
+    <div class="stat-card"
+     onclick="location.href='@Url.Action("Index","Stock")?date=@DateTime.Today.ToString("yyyy-MM-dd")'">
+    <h3>Today's Transactions</h3>
+    <div class="number">@Model.TodayTransactions</div>
+</div>
 </div>
 
 <!-- Charts -->
@@ -203,12 +216,25 @@
 </div>
 
 <!-- Bottom buttons -->
-<p>
+@* <p>
     <a href="@Url.Action("Index", "Category")" class="btn btn-primary">Manage Categories</a>
     <a href="@Url.Action("Index", "Product")" class="btn btn-primary">Manage Products</a>
     <a href="@Url.Action("Index", "Stock")" class="btn btn-primary">Stock Transaction</a>
 </p>
+ *@
+ <div class="bottom-buttons">
+    <a href="@Url.Action("Index", "Category")" class="btn btn-primary">
+        Manage Categories
+    </a>
 
+    <a href="@Url.Action("Index", "Product")" class="btn btn-primary">
+        Manage Products
+    </a>
+
+    <a href="@Url.Action("Index", "Stock")" class="btn btn-primary">
+        Stock Transaction
+    </a>
+</div>
 @section Scripts {
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
     <script>
@@ -344,12 +370,7 @@
                     }] 
                 },
                 options: {
-                    // onClick: (e, active) => {
-                    //     if (active.length) {
-                    //         const category = categoryNames[active[0].index];
-                    //         goToCategory(category);
-                    //     }
-                    // },
+                   
                     onClick: (e, active) => {
                        if (active.length) {
                            const category = categoryNames[active[0].index];
@@ -395,9 +416,8 @@
                 options: {
                     onClick: (e, active) => {
                         if (active.length) {
-                            const quantity = lowStockQtys[active[0].index];
-                            window.location.href = productUrl + '?minQuantity=' + quantity + '&maxQuantity=' + quantity;
-                        }
+                            const product = lowStockNamesRaw[active[0].index];
+                            window.location.href = productUrl + '?productName=' + encodeURIComponent(product);    }
                     },
                     scales: { 
                         y: { 
