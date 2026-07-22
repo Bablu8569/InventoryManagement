@@ -281,6 +281,8 @@ namespace InventoryManagement.Controllers
                     return RedirectToAction("Index");
                 }
 
+                ViewBag.Transactions = StockTransactionModel.GetTransactionsByProductId(_db, id);
+
                 return View(product);
             }
             catch (SqlException ex)
@@ -294,7 +296,6 @@ namespace InventoryManagement.Controllers
                 return RedirectToAction("Index");
             }
         }
-
         // ================= DELETE =================
 
         [HttpPost]
