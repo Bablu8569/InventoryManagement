@@ -11,6 +11,7 @@
 
 <div class="history-page">
     <h2>📜 Transaction History</h2>
+
     @if (TempData["Error"] != null)
     {
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
@@ -27,29 +28,57 @@
         </div>
     }
 
-    <!-- ✅ Filter section with date values -->
+    <!-- Filter Section -->
     <div class="filter-section">
-        <form method="get" asp-action="Index">
+        <!-- Step 1: Form me id add ki -->
+        <form method="get" asp-action="Index" id="filterForm">
+
             <div class="filter-row">
+
                 <div class="field">
-                    <label><i class="far fa-calendar-alt"></i> From Date</label>
-                    <input type="date" name="fromDate" value="@ViewBag.FromDate" />
+                    <label>
+                        <i class="far fa-calendar-alt"></i> From Date
+                    </label>
+
+                    <!-- Step 2: From Date input me id add ki -->
+                    <input type="date"
+                           id="fromDate"
+                           name="fromDate"
+                           value="@ViewBag.FromDate" />
                 </div>
+
                 <div class="field">
-                    <label><i class="far fa-calendar-alt"></i> To Date</label>
-                    <input type="date" name="toDate" value="@ViewBag.ToDate" />
+                    <label>
+                        <i class="far fa-calendar-alt"></i> To Date
+                    </label>
+
+                    <!-- Step 2: To Date input me id add ki -->
+                    <input type="date"
+                           id="toDate"
+                           name="toDate"
+                           value="@ViewBag.ToDate" />
                 </div>
+
                 <div class="actions">
-                    <button type="submit"><i class="fas fa-filter"></i> Apply</button>
-                    <a asp-action="Index"><i class="fas fa-eraser"></i> Clear</a>
-                    <a href="@Url.Action("ExportCsv", new { fromDate = ViewBag.FromDate, toDate = ViewBag.ToDate })" class="btn-export">
+                    <button type="submit">
+                        <i class="fas fa-filter"></i> Apply
+                    </button>
+
+                    <a asp-action="Index">
+                        <i class="fas fa-eraser"></i> Clear
+                    </a>
+
+                    <a href="@Url.Action("ExportCsv", new { fromDate = ViewBag.FromDate, toDate = ViewBag.ToDate })"
+                           class="btn-export">
                         📥 Export CSV
                     </a>
                 </div>
+
             </div>
+
         </form>
     </div>
-
+</div>
     @if (!Model.Any())
     {
         <div class="alert alert-warning">⚠️ No transactions found for the selected date range.</div>
@@ -200,6 +229,42 @@
     });
 
     gridOptions.api.onFilterChanged();
+    }
+    }
+    });
+    // Date Filter Validation
+    document.getElementById("filterForm").addEventListener("submit", function (e) {
+
+    const fromDate = document.getElementById("fromDate").value;
+    const toDate = document.getElementById("toDate").value;
+
+    // From selected but To not selected
+    if (fromDate && !toDate) {
+    e.preventDefault();
+    alert("Please select To Date.");
+    document.getElementById("toDate").focus();
+    return;
+    }
+
+    // To selected but From not selected
+    if (!fromDate && toDate) {
+    e.preventDefault();
+    alert("Please select From Date.");
+    document.getElementById("fromDate").focus();
+    return;
+    }
+
+    // From Date > To Date
+    if (fromDate && toDate) {
+
+    const from = new Date(fromDate);
+    const to = new Date(toDate);
+
+    if (from > to) {
+    e.preventDefault();
+    alert("From Date cannot be greater than To Date.");
+    document.getElementById("fromDate").focus();
+    return;
     }
     }
     });
