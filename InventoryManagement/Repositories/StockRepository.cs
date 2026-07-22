@@ -80,9 +80,53 @@ namespace InventoryManagement.Repositories
         }
 
         // ========== INSERT STOCK TRANSACTION (Stored Procedure) ==========
-        public (bool Success, string Message) InsertStockTransaction(
-            StockTransactionModel model
-        )
+        //public (bool Success, string Message) InsertStockTransaction(
+        //    StockTransactionModel model
+        //)
+        //{
+        //    try
+        //    {
+        //        if (model == null)
+        //        {
+        //            return (false, "Transaction model cannot be null.");
+        //        }
+
+        //        var ht = new Hashtable();
+        //        ht.Add("@ProductId", model.ProductId);
+        //        ht.Add("@TransactionType", model.TransactionType);
+        //        ht.Add("@Quantity", model.Quantity);
+        //        ht.Add("@Remarks", string.IsNullOrEmpty(model.Remarks) ? DBNull.Value : (object)model.Remarks);
+
+        //        DataTable dt = _dbHelper.ExecuteStoredProcedure("USP_InsertStockTransaction", ht);
+
+        //        if (dt != null && dt.Rows.Count > 0)
+        //        {
+        //            try
+        //            {
+        //                int result = Convert.ToInt32(dt.Rows[0]["Result"]);
+        //                string message = dt.Rows[0]["Message"]?.ToString() ?? "Unknown";
+
+        //                return (result == 1, message);
+        //            }
+        //            catch (Exception ex)
+        //            {
+        //                return (false, "Error reading result: " + ex.Message);
+        //            }
+        //        }
+
+        //        return (false, "No response from database.");
+        //    }
+        //    catch (SqlException ex)
+        //    {
+        //        return (false, "Database error: " + ex.Message);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return (false, "Error: " + ex.Message);
+        //    }
+        //}
+
+        public (bool Success, string Message) InsertStockTransaction(StockTransactionModel model)
         {
             try
             {
@@ -91,27 +135,48 @@ namespace InventoryManagement.Repositories
                     return (false, "Transaction model cannot be null.");
                 }
 
+                // Product Validation
+                if (model.ProductId <= 0)
+                {
+                    return (false, "Please select a valid product.");
+                }
+
+                // Transaction Type Validation
+                if (string.IsNullOrWhiteSpace(model.TransactionType))
+                {
+                    return (false, "Please select transaction type.");
+                }
+
+                if (model.TransactionType != "In" && model.TransactionType != "Out")
+                {
+                    return (false, "Invalid transaction type.");
+                }
+
+                // Quantity Validation
+                if (model.Quantity < 1 || model.Quantity > 1000)
+                {
+                    return (false, "Quantity must be between 1 and 1000.");
+                }
+
                 var ht = new Hashtable();
                 ht.Add("@ProductId", model.ProductId);
                 ht.Add("@TransactionType", model.TransactionType);
                 ht.Add("@Quantity", model.Quantity);
-                ht.Add("@Remarks", string.IsNullOrEmpty(model.Remarks) ? DBNull.Value : (object)model.Remarks);
+
+                // Remarks Optional
+                ht.Add("@Remarks",
+                    string.IsNullOrWhiteSpace(model.Remarks)
+                        ? DBNull.Value
+                        : (object)model.Remarks.Trim());
 
                 DataTable dt = _dbHelper.ExecuteStoredProcedure("USP_InsertStockTransaction", ht);
 
                 if (dt != null && dt.Rows.Count > 0)
                 {
-                    try
-                    {
-                        int result = Convert.ToInt32(dt.Rows[0]["Result"]);
-                        string message = dt.Rows[0]["Message"]?.ToString() ?? "Unknown";
+                    int result = Convert.ToInt32(dt.Rows[0]["Result"]);
+                    string message = dt.Rows[0]["Message"]?.ToString() ?? "Unknown";
 
-                        return (result == 1, message);
-                    }
-                    catch (Exception ex)
-                    {
-                        return (false, "Error reading result: " + ex.Message);
-                    }
+                    return (result == 1, message);
                 }
 
                 return (false, "No response from database.");
@@ -233,8 +298,11 @@ namespace InventoryManagement.Repositories
 
                 var result = InsertStockTransaction(new StockTransactionModel
                 {
-                    ProductId = model.ProductId ?? 0,
-                    Quantity = model.Quantity ?? 0,
+                    //ProductId = model.ProductId ?? 0,
+                    //Quantity = model.Quantity ?? 0,
+
+                    ProductId = model.ProductId,
+                    Quantity = model.Quantity,
                     TransactionType = model.TransactionType ?? "",
                     Remarks = model.Remarks ?? ""
                 });

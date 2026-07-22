@@ -18,42 +18,29 @@ namespace InventoryManagement.Controllers
 
         public StockController(
             IConfiguration configuration,
-            IStockRepository stockRepository
-        )
+            IStockRepository stockRepository)
         {
             _configuration = configuration;
             _stockRepository = stockRepository;
         }
 
-        // ========== HELPER METHODS ==========
+        // ================= LOGIN CHECK =================
+
         private bool IsUserLoggedIn()
         {
-            try
-            {
-                return !string.IsNullOrEmpty(
-                    HttpContext.Session.GetString("Username")
-                );
-            }
-            catch
-            {
-                return false;
-            }
+            return !string.IsNullOrEmpty(HttpContext.Session.GetString("Username"));
         }
+
+        // ================= ROLE CHECK =================
 
         private bool CanAddTransaction()
         {
-            try
-            {
-                var role = HttpContext.Session.GetString("Role");
-                return role == "1" || role == "3";
-            }
-            catch
-            {
-                return false;
-            }
+            string? role = HttpContext.Session.GetString("Role");
+            return role == "1" || role == "3";
         }
 
-        // ========== TRANSACTION HISTORY ==========
+        // ================= TRANSACTION HISTORY =================
+
         public IActionResult Index(DateTime? fromDate, DateTime? toDate)
         {
             try
@@ -68,51 +55,34 @@ namespace InventoryManagement.Controllers
 
                 return View(transactions);
             }
-            catch (SqlException ex)
-            {
-                TempData["Error"] = "Database error: " + ex.Message;
-                return RedirectToAction("Index", "Dashboard");
-            }
             catch (Exception ex)
             {
-                TempData["Error"] = "Error loading transactions: " + ex.Message;
+                TempData["Error"] = ex.Message;
                 return RedirectToAction("Index", "Dashboard");
             }
         }
 
-        // ========== CREATE TRANSACTION (GET) ==========
+        // ================= CREATE GET =================
+
         [HttpGet]
         public IActionResult Create()
         {
-            try
+            if (!IsUserLoggedIn())
+                return RedirectToAction("Login", "Account");
+
+            if (!CanAddTransaction())
             {
-                if (!IsUserLoggedIn())
-                    return RedirectToAction("Login", "Account");
-
-                if (!CanAddTransaction())
-                {
-                    TempData["Error"] = "Access Denied. Only Admin and Super User can add stock transactions.";
-                    return RedirectToAction("Index", "Dashboard");
-                }
-
-                var products = GetProductList();
-                ViewBag.Products = products;
-
-                return View();
-            }
-            catch (SqlException ex)
-            {
-                TempData["Error"] = "Database error: " + ex.Message;
+                TempData["Error"] = "Access Denied.";
                 return RedirectToAction("Index", "Dashboard");
             }
-            catch (Exception ex)
-            {
-                TempData["Error"] = "Error loading products: " + ex.Message;
-                return RedirectToAction("Index", "Dashboard");
-            }
+
+            ViewBag.Products = GetProductList();
+
+            return View();
         }
 
-        // ========== CREATE TRANSACTION (POST) ==========
+        // ================= CREATE POST =================
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult Create(StockEntryModel model)
@@ -124,8 +94,36 @@ namespace InventoryManagement.Controllers
 
                 if (!CanAddTransaction())
                 {
-                    TempData["Error"] = "Access Denied. Only Admin and Super User can add stock transactions.";
+                    TempData["Error"] = "Access Denied.";
                     return RedirectToAction("Index", "Dashboard");
+                }
+
+                // Product Validation
+                if (model.ProductId <= 0)
+                {
+                    ModelState.AddModelError("ProductId", "Please select a product.");
+                }
+
+                // Quantity Validation
+                if (model.Quantity < 1 || model.Quantity > 1000)
+                {
+                    ModelState.AddModelError("Quantity",
+                        "Quantity must be between 1 and 1000.");
+                }
+
+                // Transaction Type Validation
+                if (string.IsNullOrWhiteSpace(model.TransactionType))
+                {
+                    ModelState.AddModelError("TransactionType",
+                        "Please select transaction type.");
+                }
+
+                // Remarks Optional
+                if (!string.IsNullOrWhiteSpace(model.Remarks) &&
+                    model.Remarks.Length > 500)
+                {
+                    ModelState.AddModelError("Remarks",
+                        "Remarks cannot exceed 500 characters.");
                 }
 
                 if (!ModelState.IsValid)
@@ -136,104 +134,70 @@ namespace InventoryManagement.Controllers
 
                 string connStr = _configuration.GetConnectionString("DefaultConnection");
 
-                if (string.IsNullOrEmpty(connStr))
-                {
-                    ModelState.AddModelError("", "Database connection string is missing.");
-                    ViewBag.Products = GetProductList();
-                    return View(model);
-                }
-
                 using (SqlConnection conn = new SqlConnection(connStr))
                 {
                     conn.Open();
 
-                    // ✅ Check stock for "Out" transaction
-                    if (model.TransactionType == "Out")
+                    // Stock Check for OUT
+
+                    if (string.Equals(model.TransactionType, "Out",
+                        StringComparison.OrdinalIgnoreCase))
                     {
-                        try
+                        using (SqlCommand cmd = new SqlCommand("USP_CheckStock", conn))
                         {
-                            using (SqlCommand checkCmd = new SqlCommand("USP_CheckStock", conn))
+                            cmd.CommandType = CommandType.StoredProcedure;
+                            cmd.Parameters.AddWithValue("@ProductId", model.ProductId);
+
+                            int currentStock = Convert.ToInt32(cmd.ExecuteScalar());
+
+                            if (currentStock < model.Quantity)
                             {
-                                checkCmd.CommandType = CommandType.StoredProcedure;
-                                checkCmd.Parameters.AddWithValue("@ProductId", model.ProductId);
+                                ModelState.AddModelError("",
+                                    $"Insufficient Stock. Available : {currentStock}");
 
-                                object result = checkCmd.ExecuteScalar();
-                                int currentStock = result != null ? Convert.ToInt32(result) : 0;
-
-                                if (currentStock < model.Quantity)
-                                {
-                                    ModelState.AddModelError("", "Insufficient stock! Available stock: " + currentStock);
-                                    ViewBag.Products = GetProductList();
-                                    return View(model);
-                                }
+                                ViewBag.Products = GetProductList();
+                                return View(model);
                             }
                         }
-                        catch (SqlException ex)
-                        {
-                            ModelState.AddModelError("", "Error checking stock: " + ex.Message);
-                            ViewBag.Products = GetProductList();
-                            return View(model);
-                        }
                     }
 
-                    // ✅ Update product quantity
-                    try
+                    // Insert Transaction
+                    using (SqlCommand cmd = new SqlCommand("USP_InsertStockTransaction", conn))
                     {
-                        using (SqlCommand updateCmd = new SqlCommand("USP_UpdateProductStock", conn))
-                        {
-                            updateCmd.CommandType = CommandType.StoredProcedure;
-                            updateCmd.Parameters.AddWithValue("@ProductId", model.ProductId);
-                            updateCmd.Parameters.AddWithValue("@Quantity", model.Quantity);
-                            updateCmd.Parameters.AddWithValue("@TransactionType", model.TransactionType);
-                            updateCmd.ExecuteNonQuery();
-                        }
-                    }
-                    catch (SqlException ex)
-                    {
-                        ModelState.AddModelError("", "Error updating stock: " + ex.Message);
-                        ViewBag.Products = GetProductList();
-                        return View(model);
-                    }
+                        cmd.CommandType = CommandType.StoredProcedure;
 
-                    // ✅ Insert transaction record
-                    try
-                    {
-                        using (SqlCommand insertCmd = new SqlCommand("USP_InsertStockTransaction", conn))
-                        {
-                            insertCmd.CommandType = CommandType.StoredProcedure;
-                            insertCmd.Parameters.AddWithValue("@ProductId", model.ProductId);
-                            insertCmd.Parameters.AddWithValue("@Quantity", model.Quantity);
-                            insertCmd.Parameters.AddWithValue("@TransactionType", model.TransactionType);
-                            insertCmd.Parameters.AddWithValue("@TransactionDate", DateTime.Now);
-                            insertCmd.ExecuteNonQuery();
-                        }
-                    }
-                    catch (SqlException ex)
-                    {
-                        ModelState.AddModelError("", "Error saving transaction: " + ex.Message);
-                        ViewBag.Products = GetProductList();
-                        return View(model);
+                        cmd.Parameters.AddWithValue("@ProductId", model.ProductId);
+                        cmd.Parameters.AddWithValue("@Quantity", model.Quantity);
+                        cmd.Parameters.AddWithValue("@TransactionType", model.TransactionType);
+                        cmd.Parameters.AddWithValue("@TransactionDate", DateTime.Now);
+
+                        cmd.Parameters.AddWithValue("@Remarks",
+                            string.IsNullOrWhiteSpace(model.Remarks)
+                            ? DBNull.Value
+                            : (object)model.Remarks);
+
+                        cmd.ExecuteNonQuery();
                     }
                 }
 
-                TempData["Success"] = $"Stock {model.TransactionType} successful! Quantity: {model.Quantity}";
-                return RedirectToAction("Index");
+                TempData["Success"] = "Transaction Saved Successfully.";
+
+                return RedirectToAction(nameof(Index));
             }
             catch (SqlException ex)
             {
-                ModelState.AddModelError("", "Database error: " + ex.Message);
-                ViewBag.Products = GetProductList();
-                return View(model);
+                ModelState.AddModelError("", ex.Message);
             }
             catch (Exception ex)
             {
-                ModelState.AddModelError("", "Error: " + ex.Message);
-                ViewBag.Products = GetProductList();
-                return View(model);
+                ModelState.AddModelError("", ex.Message);
             }
-        }
 
-        // ========== GET PRODUCT LIST ==========
+            ViewBag.Products = GetProductList();
+            return View(model);
+        }
+        // ================= GET PRODUCT LIST =================
+
         private List<ProductModel> GetProductList()
         {
             var products = new List<ProductModel>();
@@ -241,11 +205,6 @@ namespace InventoryManagement.Controllers
             try
             {
                 string connStr = _configuration.GetConnectionString("DefaultConnection");
-
-                if (string.IsNullOrEmpty(connStr))
-                {
-                    return products;
-                }
 
                 using (SqlConnection conn = new SqlConnection(connStr))
                 {
@@ -270,20 +229,16 @@ namespace InventoryManagement.Controllers
                     }
                 }
             }
-            catch (SqlException ex)
+            catch (Exception)
             {
-                // Log error (you can add logging here)
-                Console.WriteLine("SQL Error in GetProductList: " + ex.Message);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine("Error in GetProductList: " + ex.Message);
+                // Optional: Log Error
             }
 
             return products;
         }
 
-        // ========== EXPORT TRANSACTIONS TO CSV ==========
+        // ================= EXPORT CSV =================
+
         [HttpGet]
         public IActionResult ExportCsv(DateTime? fromDate, DateTime? toDate)
         {
@@ -292,47 +247,48 @@ namespace InventoryManagement.Controllers
                 if (!IsUserLoggedIn())
                     return RedirectToAction("Login", "Account");
 
-                // ✅ Get transactions with date filter
                 var transactions = _stockRepository.GetStockTransactions(fromDate, toDate);
 
                 if (transactions == null || transactions.Count == 0)
                 {
-                    TempData["Error"] = "No transactions found to export.";
-                    return RedirectToAction("Index");
+                    TempData["Error"] = "No transaction found.";
+                    return RedirectToAction(nameof(Index));
                 }
 
-                // ✅ Headers
-                string[] headers = {
-                    "Transaction ID",
+                string[] headers =
+                {
+                    "Transaction Id",
                     "Product",
                     "Quantity",
-                    "Type",
-                    "Date & Time"
+                    "Transaction Type",
+                    "Transaction Date",
+                    "Remarks"
                 };
 
-                string csvData = CsvHelper.ConvertToCsv(transactions, headers, item => new string[]
-                {
-                    item.TransactionId.ToString(),
-                    item.ProductName ?? "",
-                    item.Quantity.ToString(),
-                    item.TransactionType == "In" ? "Stock In" : "Stock Out",
-                    item.TransactionDate.ToString("yyyy-MM-dd HH:mm:ss")
-                });
+                string csv = CsvHelper.ConvertToCsv(
+                    transactions,
+                    headers,
+                    item => new string[]
+                    {
+                        item.TransactionId.ToString(),
+                        item.ProductName ?? "",
+                        item.Quantity.ToString(),
+                        item.TransactionType ?? "",
+                        item.TransactionDate.ToString("yyyy-MM-dd HH:mm:ss"),
+                        item.Remarks ?? ""
+                    });
 
-                byte[] bytes = Encoding.UTF8.GetBytes(csvData);
-                string fileName = "Transactions_" + DateTime.Now.ToString("yyyy-MM-dd") + ".csv";
+                byte[] bytes = Encoding.UTF8.GetBytes(csv);
 
-                return File(bytes, "text/csv", fileName);
-            }
-            catch (SqlException ex)
-            {
-                TempData["Error"] = "Database error exporting CSV: " + ex.Message;
-                return RedirectToAction("Index");
+                return File(
+                    bytes,
+                    "text/csv",
+                    $"StockTransactions_{DateTime.Now:yyyyMMddHHmmss}.csv");
             }
             catch (Exception ex)
             {
-                TempData["Error"] = "Error exporting CSV: " + ex.Message;
-                return RedirectToAction("Index");
+                TempData["Error"] = ex.Message;
+                return RedirectToAction(nameof(Index));
             }
         }
     }

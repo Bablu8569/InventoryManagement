@@ -1,8 +1,8 @@
 ﻿@model ProductModel
 @{
     ViewData["Title"] = "Product Details";
-    // var transactions = ViewBag.Transactions as List<StockTransactionModel>;
-     var transactions = Model.StockHistory;
+     var transactions = ViewBag.Transactions as List<StockTransactionModel>;
+    // var transactions = Model.StockHistory;
     string stockStatus = Model.Quantity <= 5 ? "Low Stock" : (Model.Quantity <= 20 ? "Adequate" : "High");
     string statusColor = Model.Quantity <= 5 ? "#dc2626" : (Model.Quantity <= 20 ? "#f59e0b" : "#10b981");
 }
