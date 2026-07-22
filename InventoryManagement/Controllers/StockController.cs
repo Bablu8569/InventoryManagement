@@ -41,17 +41,48 @@ namespace InventoryManagement.Controllers
 
         // ================= TRANSACTION HISTORY =================
 
-        public IActionResult Index(DateTime? fromDate, DateTime? toDate)
+        //public IActionResult Index(DateTime? fromDate, DateTime? toDate)
+        //{
+        //    try
+        //    {
+        //        if (!IsUserLoggedIn())
+        //            return RedirectToAction("Login", "Account");
+
+        //        var transactions = _stockRepository.GetStockTransactions(fromDate, toDate);
+
+        //        ViewBag.FromDate = fromDate?.ToString("yyyy-MM-dd");
+        //        ViewBag.ToDate = toDate?.ToString("yyyy-MM-dd");
+
+        //        return View(transactions);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        TempData["Error"] = ex.Message;
+        //        return RedirectToAction("Index", "Dashboard");
+        //    }
+        //}
+        public IActionResult Index(DateTime? fromDate, DateTime? toDate, DateTime? date)
         {
             try
             {
                 if (!IsUserLoggedIn())
                     return RedirectToAction("Login", "Account");
 
+
+                // Dashboard Today's Transactions card se aane par
+                if (date.HasValue)
+                {
+                    fromDate = date;
+                    toDate = date;
+                }
+
+
                 var transactions = _stockRepository.GetStockTransactions(fromDate, toDate);
+
 
                 ViewBag.FromDate = fromDate?.ToString("yyyy-MM-dd");
                 ViewBag.ToDate = toDate?.ToString("yyyy-MM-dd");
+
 
                 return View(transactions);
             }
