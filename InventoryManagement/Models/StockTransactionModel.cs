@@ -22,6 +22,8 @@ namespace InventoryManagement.Models
         public string ReferenceNo { get; set; } = "";     // optional, if needed
         public int UserId { get; set; }                   // optional
 
+        public int RunningStock { get; set; }
+
 
 
         public static List<StockTransactionModel> GetTransactionsByProductId(DatabaseHelper db, int productId)
