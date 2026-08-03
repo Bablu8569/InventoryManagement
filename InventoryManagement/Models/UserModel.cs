@@ -12,11 +12,15 @@ namespace InventoryManagement.Models
     {
         public int UserId { get; set; }
 
+        //[Required(ErrorMessage = "Username is required.")]
+        //[StringLength(20, ErrorMessage = "Username cannot be more than 20 characters.")]
+        //[RegularExpression(@"^[a-zA-Z0-9_]+$", ErrorMessage = "Username can contain only letters, numbers, and underscores.")]
+        //public string Username { get; set; } = string.Empty;
+
         [Required(ErrorMessage = "Username is required.")]
         [StringLength(20, ErrorMessage = "Username cannot be more than 20 characters.")]
-        [RegularExpression(@"^[a-zA-Z0-9_]+$", ErrorMessage = "Username can contain only letters, numbers, and underscores.")]
+        [RegularExpression(@"^[a-zA-Z][a-zA-Z0-9_]*$", ErrorMessage = "Username must start with a letter and can contain only letters, numbers, and underscores.")]
         public string Username { get; set; } = string.Empty;
-
         [Required(ErrorMessage = "Email is required.")]
         [EmailAddress(ErrorMessage = "Enter a valid email address.")]
         [RegularExpression(@"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$",
