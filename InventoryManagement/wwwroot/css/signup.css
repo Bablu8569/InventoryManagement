@@ -2,324 +2,339 @@
     margin: 0;
     padding: 0;
     box-sizing: border-box;
+    font-family: 'Segoe UI',sans-serif;
 }
 
 html,
 body {
     width: 100%;
     height: 100%;
-    font-family: "Segoe UI", sans-serif;
 }
 
 body {
-    background: linear-gradient(135deg, #4facfe, #00c6fb);
     display: flex;
     justify-content: center;
     align-items: center;
-    /* Remove overflow: hidden; */
+    min-height: 100vh;
+    padding: 10px;
+    background: linear-gradient(135deg,#4facfe,#00c6fb);
+    overflow: hidden;
 }
 
-/* Container */
 .signup-container {
     width: 100%;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    padding: 15px;
+    max-width: 500px;
 }
 
-/* Card - MAJOR CHANGES */
 .signup-card {
     width: 100%;
-    max-width: 380px;
     background: #fff;
     border-radius: 15px;
-    padding: 20px 25px; /* Reduced from 22px */
-    box-shadow: 0 15px 40px rgba(0,0,0,.18);
-    max-height: 90vh; /* Limit height */
-    overflow-y: auto; /* Allow scroll only if needed */
+    padding: 20px 30px;
+    box-shadow: 0 12px 30px rgba(0,0,0,.15);
 }
 
-    /* Custom Scrollbar - Professional Touch */
-    .signup-card::-webkit-scrollbar {
-        width: 4px;
-    }
-
-    .signup-card::-webkit-scrollbar-track {
-        background: #f1f1f1;
-        border-radius: 10px;
-    }
-
-    .signup-card::-webkit-scrollbar-thumb {
-        background: linear-gradient(135deg, #4facfe, #00c6fb);
-        border-radius: 10px;
-    }
-
-        .signup-card::-webkit-scrollbar-thumb:hover {
-            background: #4facfe;
-        }
-
-    /* Heading - Reduced */
     .signup-card h2 {
         text-align: center;
-        font-size: 24px; /* Reduced from 28px */
+        font-size: 32px;
         color: #222;
-        margin-bottom: 4px; /* Reduced from 6px */
+        margin-bottom: 4px;
+        font-weight: 700;
     }
 
 .subtitle {
     text-align: center;
     color: #666;
-    font-size: 13px; /* Reduced from 14px */
-    margin-bottom: 16px; /* Reduced from 20px */
+    font-size: 14px;
+    margin-bottom: 18px;
 }
 
-/* Form - Reduced spacing */
+form {
+    width: 100%;
+}
+
 .form-group {
-    margin-bottom: 10px; /* Reduced from 14px */
+    margin-bottom: 12px;
 }
 
     .form-group label {
         display: block;
-        margin-bottom: 4px; /* Reduced from 6px */
-        font-size: 13px; /* Reduced from 14px */
+        font-size: 14px;
         font-weight: 600;
         color: #333;
+        margin-bottom: 5px;
     }
 
-    .form-group input {
-        width: 100%;
-        height: 38px; /* Reduced from 44px */
-        border: 1px solid #d4d4d4;
-        border-radius: 8px;
-        padding: 0 42px 0 12px;
-        font-size: 13px; /* Reduced from 14px */
-        transition: .3s;
-    }
-
-        .form-group input:focus {
-            outline: none;
-            border-color: #4facfe;
-            box-shadow: 0 0 6px rgba(79,172,254,.25);
-        }
-
-/* Password */
 .password-box {
     position: relative;
+    width: 100%;
 }
+
+.form-group input {
+    width: 100%;
+    height: 42px;
+    border: 1px solid #d5d5d5;
+    border-radius: 8px;
+    padding: 0 45px 0 14px;
+    font-size: 15px;
+    outline: none;
+    transition: .3s;
+    background: #fff;
+}
+
+    .form-group input::placeholder {
+        color: #999;
+    }
+
+    .form-group input:focus {
+        border-color: #0d6efd;
+        box-shadow: 0 0 8px rgba(13,110,253,.20);
+    }
 
 .toggle-password {
     position: absolute;
+    right: 15px;
     top: 50%;
-    right: 14px;
     transform: translateY(-50%);
+    font-size: 18px;
+    color: #666;
     cursor: pointer;
-    color: #777;
-    font-size: 15px; /* Reduced from 17px */
+    transition: .3s;
 }
 
     .toggle-password:hover {
-        color: #4facfe;
+        color: #0d6efd;
     }
 
-/* Button - Reduced */
 .btn-signup {
     width: 100%;
-    height: 38px; /* Reduced from 44px */
+    height: 42px;
     border: none;
     border-radius: 8px;
-    background: linear-gradient(135deg,#4facfe,#00c6fb);
+    background: #0d6efd;
     color: #fff;
-    font-size: 14px; /* Reduced from 15px */
+    font-size: 16px;
     font-weight: 600;
     cursor: pointer;
     transition: .3s;
-    margin-top: 2px; /* Added small top margin */
+    margin-top: 6px;
 }
-
     .btn-signup:hover {
+        background: #0b5ed7;
         transform: translateY(-2px);
-        box-shadow: 0 10px 18px rgba(79,172,254,.35);
+        box-shadow: 0 8px 20px rgba(13,110,253,.35);
     }
 
-/* Login - Reduced */
+    .btn-signup:active {
+        transform: scale(.98);
+    }
+
+    .btn-signup:disabled {
+        opacity: .6;
+        cursor: not-allowed;
+        box-shadow: none;
+    }
+
 .login-link {
     text-align: center;
-    margin-top: 12px; /* Reduced from 16px */
-    font-size: 13px; /* Reduced from 14px */
+    margin-top: 14px;
+    font-size: 14px;
     color: #555;
 }
 
     .login-link a {
+        color: #0d6efd;
         text-decoration: none;
-        color: #007bff;
         font-weight: 600;
+        transition: .3s;
     }
 
         .login-link a:hover {
+            color: #084298;
             text-decoration: underline;
         }
 
-/* Validation - Smaller */
+.validation-summary-errors {
+    margin-bottom: 12px;
+    padding: 10px;
+    border-radius: 8px;
+    background: #fdeaea;
+    border: 1px solid #f5b5b5;
+    color: #dc3545;
+    font-size: 13px;
+}
+
 .field-validation-error {
     display: block;
-    margin-top: 3px; /* Reduced from 4px */
-    font-size: 11px; /* Reduced from 12px */
+    margin-top: 4px;
     color: #dc3545;
+    font-size: 12px;
 }
 
 .input-validation-error {
+    border: 1px solid #dc3545 !important;
+    background: #fff9f9;
+}
+
+.input-validation-valid {
+    border: 1px solid #28a745 !important;
+}
+
+.has-error input {
     border-color: #dc3545 !important;
 }
 
-/* Placeholder */
-::placeholder {
-    color: #999;
-    font-size: 12px; /* Added smaller placeholder */
+.has-success input {
+    border-color: #28a745 !important;
 }
 
-/* Tablet */
+.password-strength {
+    margin-top: 5px;
+    font-size: 12px;
+}
+
+    .password-strength .weak {
+        color: #dc3545;
+        font-weight: 600;
+    }
+
+    .password-strength .medium {
+        color: #ffc107;
+        font-weight: 600;
+    }
+
+    .password-strength .strong {
+        color: #28a745;
+        font-weight: 600;
+    }
+
+.form-text {
+    display: block;
+    margin-top: 4px;
+    color: #666;
+    font-size: 12px;
+}
+
+.signup-card {
+    animation: fadeIn .5s ease;
+}
+
+@keyframes fadeIn {
+
+    from {
+        opacity: 0;
+        transform: translateY(25px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
 @media (max-width:768px) {
+
+    body {
+        padding: 12px;
+        overflow: auto;
+    }
+
+    .signup-container {
+        max-width: 420px;
+    }
+
     .signup-card {
-        max-width: 360px;
-        padding: 18px 22px; /* Reduced */
-        max-height: 85vh;
+        padding: 18px 22px;
     }
 
         .signup-card h2 {
-            font-size: 22px; /* Reduced */
+            font-size: 28px;
         }
 }
 
-/* Mobile */
-@media (max-width:480px) {
+@media (max-width:576px) {
+
+    body {
+        padding: 8px;
+        align-items: flex-start;
+        overflow: auto;
+    }
+
     .signup-container {
-        padding: 12px; /* Reduced */
+        max-width: 100%;
+        margin: 20px 0;
     }
 
     .signup-card {
-        max-width: 100%;
-        padding: 16px 18px; /* Reduced */
-        max-height: 80vh;
+        padding: 18px;
+        border-radius: 12px;
     }
 
         .signup-card h2 {
-            font-size: 20px; /* Reduced */
+            font-size: 24px;
         }
 
     .subtitle {
-        font-size: 12px;
+        font-size: 13px;
+        margin-bottom: 14px;
+    }
+
+    .form-group {
+        margin-bottom: 10px;
+    }
+
+        .form-group label {
+            font-size: 13px;
+        }
+
+        .form-group input {
+            height: 40px;
+            font-size: 14px;
+        }
+
+    .toggle-password {
+        right: 12px;
+        font-size: 16px;
+    }
+
+    .btn-signup {
+        height: 40px;
+        font-size: 15px;
+    }
+
+    .login-link {
+        font-size: 13px;
+    }
+}
+
+@media (max-height:700px) {
+
+    body {
+        overflow: auto;
+        padding: 10px;
+    }
+
+    .signup-card {
+        padding: 16px 24px;
+    }
+
+        .signup-card h2 {
+            font-size: 26px;
+        }
+
+    .subtitle {
         margin-bottom: 12px;
     }
 
     .form-group {
-        margin-bottom: 8px;
+        margin-bottom: 9px;
     }
 
         .form-group input {
-            height: 36px;
-            font-size: 12px;
+            height: 38px;
         }
 
     .btn-signup {
-        height: 36px;
-        font-size: 13px;
-    }
-
-    .login-link {
-        font-size: 12px;
-        margin-top: 10px;
-    }
-}
-
-/* Small Height Screens */
-@media (max-height:700px) {
-    .signup-card {
-        padding: 15px 20px;
-        max-height: 75vh;
-    }
-
-        .signup-card h2 {
-            font-size: 20px;
-            margin-bottom: 2px;
-        }
-
-    .subtitle {
-        font-size: 12px;
-        margin-bottom: 10px;
-    }
-
-    .form-group {
-        margin-bottom: 6px;
-    }
-
-        .form-group input {
-            height: 34px;
-            font-size: 12px;
-            padding: 0 36px 0 10px;
-        }
-
-    .btn-signup {
-        height: 34px;
-        font-size: 13px;
-    }
-
-    .login-link {
-        margin-top: 8px;
-        font-size: 12px;
-    }
-
-    .field-validation-error {
-        font-size: 10px;
-        margin-top: 2px;
-    }
-
-    .toggle-password {
-        font-size: 14px;
-        right: 12px;
-    }
-}
-
-/* Extra Small Height (below 600px) */
-@media (max-height:600px) {
-    .signup-card {
-        padding: 12px 16px;
-        max-height: 70vh;
-    }
-
-        .signup-card h2 {
-            font-size: 18px;
-            margin-bottom: 2px;
-        }
-
-    .subtitle {
-        font-size: 11px;
-        margin-bottom: 8px;
-    }
-
-    .form-group {
-        margin-bottom: 5px;
-    }
-
-        .form-group label {
-            font-size: 11px;
-            margin-bottom: 2px;
-        }
-
-        .form-group input {
-            height: 30px;
-            font-size: 11px;
-            padding: 0 32px 0 8px;
-        }
-
-    .btn-signup {
-        height: 30px;
-        font-size: 12px;
-        margin-top: 2px;
-    }
-
-    .login-link {
-        margin-top: 6px;
-        font-size: 11px;
+        height: 38px;
     }
 }

@@ -4,18 +4,26 @@
 }
 
 <!DOCTYPE html>
+
 <html lang="en">
+
 <head>
+
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-    <title>Sign Up - Inventory Management</title>
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0" />
 
-    <link rel="stylesheet" href="~/css/signup.css" />
+    <title>Create Account</title>
+
+    <link rel="stylesheet"
+          href="~/css/signup.css" />
 
     <!-- Font Awesome -->
+
     <link rel="stylesheet"
           href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+
 </head>
 
 <body>
@@ -27,10 +35,20 @@
             <h2>Create Account</h2>
 
             <p class="subtitle">
-                Join Inventory Management
+
+                Inventory Management System
+
             </p>
 
-            <form method="post" id="signupForm">
+            <form asp-action="Signup"
+                  method="post"
+                  id="signupForm">
+
+                <!-- Validation Summary -->
+
+                <div asp-validation-summary="ModelOnly"
+                     class="validation-summary-errors">
+                </div>
 
                 <!-- Username -->
 
@@ -38,9 +56,20 @@
 
                     <label asp-for="Username"></label>
 
-                    <input asp-for="Username"
-                           maxlength="20"
-                           placeholder="Enter Username" />
+                    <div class="password-box">
+
+                        <input asp-for="Username"
+                               maxlength="20"
+                               placeholder="Enter Username" />
+
+                        <span class="toggle-password"
+                              style="pointer-events:none;cursor:default;">
+
+                            <i class="fa-solid fa-user"></i>
+
+                        </span>
+
+                    </div>
 
                     <span asp-validation-for="Username"
                           class="field-validation-error"></span>
@@ -53,9 +82,20 @@
 
                     <label asp-for="Email"></label>
 
-                    <input asp-for="Email"
-                           type="email"
-                           placeholder="Enter Email" />
+                    <div class="password-box">
+
+                        <input asp-for="Email"
+                               type="email"
+                               placeholder="Enter Email Address" />
+
+                        <span class="toggle-password"
+                              style="pointer-events:none;cursor:default;">
+
+                            <i class="fa-solid fa-envelope"></i>
+
+                        </span>
+
+                    </div>
 
                     <span asp-validation-for="Email"
                           class="field-validation-error"></span>
@@ -83,6 +123,7 @@
                         </span>
 
                     </div>
+
                     <span asp-validation-for="Password"
                           class="field-validation-error"></span>
 
@@ -118,6 +159,10 @@
                 <button type="submit"
                         class="btn-signup">
 
+                    <i class="fa-solid fa-user-plus"></i>
+
+                    &nbsp;
+
                     Create Account
 
                 </button>
@@ -128,7 +173,8 @@
 
                 Already have an account?
 
-                <a href="@Url.Action("Login", "Account")">
+                <a asp-controller="Account"
+                       asp-action="Login">
 
                     Sign In
 
@@ -140,7 +186,7 @@
 
     </div>
 
-    <!-- JQuery -->
+    <!-- jQuery -->
 
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
@@ -152,13 +198,14 @@
 
     <script>
 
-        $(document).ready(function () {
-
-       // $.validator.unobtrusive.parse("#signupForm");
+        $(function () {
 
         $(".toggle-password").click(function () {
 
         var target = $(this).data("target");
+
+        if (!target)
+        return;
 
         var input = $(target);
 
@@ -187,18 +234,18 @@
 
         });
 
-        @if (TempData["SignupSuccess"] != null)
-        {
-            <text>
-
-                alert('@Html.Raw(TempData["SignupSuccess"])');
-
-                window.location.href='@Url.Action("Login", "Account")';
-
-            </text>
-        }
-
     </script>
+
+    @if (TempData["SignupSuccess"] != null)
+    {
+        <script>
+
+            alert('@Html.Raw(TempData["SignupSuccess"])');
+
+            window.location.href='@Url.Action("Login", "Account")';
+
+        </script>
+    }
 
 </body>
 
