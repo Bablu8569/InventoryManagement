@@ -86,7 +86,7 @@
     else
     {
         <!-- AG Grid container -->
-        <div id="transactionGrid" class="ag-theme-alpine" style="height: 500px; width: 100%;"></div>
+        <div id="transactionGrid" class="ag-theme-alpine" style=" height: calc(100vh - 300px); width: 100%;"></div>
     }
 
     
@@ -103,15 +103,13 @@
     {
     headerName: "ID",
     field: "transactionId",
-    width: 100,
-    sortable: true,
+     sortable: true,
     filter: 'agNumberColumnFilter'
     },
 
     {
     headerName: "Product",
     field: "productName",
-    width: 200,
     sortable: true,
     filter: 'agTextColumnFilter'
     },
@@ -119,7 +117,6 @@
     {
     headerName: "Quantity",
     field: "quantity",
-    width: 120,
     sortable: true,
     filter: 'agNumberColumnFilter',
 
@@ -143,7 +140,6 @@
     {
     headerName: "Running Stock",
     field: "runningStock",
-    width: 150,
     sortable: true,
     filter: 'agNumberColumnFilter',
     cellStyle: {
@@ -156,7 +152,6 @@
     {
     headerName: "Type",
     field: "transactionType",
-    width: 140,
     sortable: true,
     filter: 'agTextColumnFilter',
 
@@ -170,7 +165,6 @@
     {
     headerName: "Transaction Date",
     field: "transactionDate",
-    width: 150,
     sortable: true,
     filter: 'agDateColumnFilter',
     floatingFilter: true,
@@ -196,6 +190,7 @@
 
     defaultColDef: {
     sortable: true,
+    flex:1,
     resizable: true,
     filter: true,
     floatingFilter: true
