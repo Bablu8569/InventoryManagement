@@ -1,7 +1,8 @@
 ﻿@model ProductModel
 @{
     ViewData["Title"] = "Product Details";
-    var transactions = ViewBag.Transactions as List<StockTransactionModel>;
+     var transactions = ViewBag.Transactions as List<StockTransactionModel>;
+    // var transactions = Model.StockHistory;
     string stockStatus = Model.Quantity <= 5 ? "Low Stock" : (Model.Quantity <= 20 ? "Adequate" : "High");
     string statusColor = Model.Quantity <= 5 ? "#dc2626" : (Model.Quantity <= 20 ? "#f59e0b" : "#10b981");
 }
@@ -246,16 +247,31 @@
                         {
                             <tr>
                                 <td>@trans.TransactionDate.ToString("dd MMM yyyy, hh:mm tt")</td>
-                                <td>
-                                    @if (trans.TransactionType == "IN")
+                                @* <td>
+                                    @if (trans.TransactionType == "In")
                                     {
-                                        <span class="badge badge-in">➕ IN</span>
+                                        <span class="badge badge-in">➕ In</span>
                                     }
                                     else
                                     {
                                         <span class="badge badge-out">➖ OUT</span>
                                     }
-                                 </td>
+                                 </td> *@
+                                 <td>
+                            @if (string.Equals(trans.TransactionType, "In", StringComparison.OrdinalIgnoreCase))
+                            {
+                                  <span class="badge badge-in">➕ IN</span>
+                            }
+                            else if (string.Equals(trans.TransactionType, "Out", StringComparison.OrdinalIgnoreCase))
+                            {
+                             <span class="badge badge-out">➖ OUT</span>
+                            }
+                            else
+                            {
+                            <span class="badge">@trans.TransactionType</span>
+                            }
+                            </td>
+
                                 <td>@trans.Quantity</td>
                                 <td>@(string.IsNullOrEmpty(trans.Remarks) ? "—" : trans.Remarks)</td>
                             </tr>

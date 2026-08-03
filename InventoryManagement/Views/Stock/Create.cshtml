@@ -1,4 +1,5 @@
 ﻿@model InventoryManagement.Models.StockEntryModel
+
 @{
     ViewData["Title"] = "Stock Transaction";
 }
@@ -6,58 +7,259 @@
 <link rel="stylesheet" href="~/css/stock-transaction.css" />
 
 <div class="form-container">
+
     <div class="form-header">
-        <h3><i class="fas fa-exchange-alt me-2"></i> Stock Transaction</h3>
+        <h3>
+            <i class="fas fa-exchange-alt me-2"></i>
+            Stock Transaction
+        </h3>
     </div>
+
     <div class="form-body">
+
         @if (TempData["Success"] != null)
         {
-            <div class="alert-simple">
-                <i class="fas fa-check-circle me-1"></i> @TempData["Success"]
+            <div class="alert alert-success">
+                @TempData["Success"]
             </div>
         }
 
-        <form method="post" asp-action="Create">
-            <div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+        <form asp-action="Create" method="post" id="stockForm">
+
+            <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+            <!-- Product -->
 
             <div class="form-group">
-                <label class="form-label"><i class="fas fa-box me-1"></i> Select Product</label>
-                <select asp-for="ProductId" class="form-select" asp-items="@(new SelectList(ViewBag.Products, "ProductId", "ProductName"))">
+
+                <label class="form-label">
+                    <i class="fas fa-box me-1"></i>
+                    Select Product
+                </label>
+
+                <select asp-for="ProductId"
+                        id="ProductId"
+                        class="form-select"
+                        asp-items="@(new SelectList(ViewBag.Products, "ProductId", "ProductName"))">
+
                     <option value="">-- Select Product --</option>
+
                 </select>
+
                 <span asp-validation-for="ProductId" class="text-danger"></span>
+
             </div>
 
-            <div class="form-group">
-                <label class="form-label"><i class="fas fa-sort-amount-up me-1"></i> Quantity</label>
-                <input asp-for="Quantity" class="form-control" type="number" min="1" placeholder="Enter quantity" />
-                <span asp-validation-for="Quantity" class="text-danger"></span>
-            </div>
+            <!-- Quantity -->
 
             <div class="form-group">
-                <label class="form-label"><i class="fas fa-arrow-right-arrow-left me-1"></i> Transaction Type</label>
+
+                <label class="form-label">
+                    <i class="fas fa-sort-amount-up me-1"></i>
+                    Quantity
+                </label>
+
+                <input asp-for="Quantity"
+                       id="Quantity"
+                       class="form-control"
+                       type="number"
+                       min="1"
+                       max="1000"
+                       step="1"
+                       placeholder="Enter Quantity"
+                       onkeydown="return blockInvalidKeys(event)" />
+
+                <span asp-validation-for="Quantity"
+                      class="text-danger"></span>
+
+            </div>
+
+            <!-- Remarks -->
+
+            <div class="form-group">
+
+                <label class="form-label">
+                    <i class="fas fa-comment me-1"></i>
+                    Remarks
+                </label>
+
+                <input asp-for="Remarks"
+                       id="Remarks"
+                       class="form-control"
+                       maxlength="500"
+                       placeholder="Remarks (Optional)" />
+
+                <span asp-validation-for="Remarks"
+                      class="text-danger"></span>
+
+            </div>
+
+            <!-- Transaction Type -->
+
+            <div class="form-group">
+
+                <label class="form-label">
+                    <i class="fas fa-arrow-right-arrow-left me-1"></i>
+                    Transaction Type
+                </label>
+
                 <div class="radio-group">
+
                     <label>
-                        <input type="radio" asp-for="TransactionType" value="In" /> Stock In (Add)
+                        <input type="radio"
+                               asp-for="TransactionType"
+                               value="In" />
+                        Stock In
                     </label>
+
                     <label>
-                        <input type="radio" asp-for="TransactionType" value="Out" /> Stock Out (Remove)
+                        <input type="radio"
+                               asp-for="TransactionType"
+                               value="Out" />
+                        Stock Out
                     </label>
+
                 </div>
-                <span asp-validation-for="TransactionType" class="text-danger"></span>
+
+                <span asp-validation-for="TransactionType"
+                      class="text-danger"></span>
+
             </div>
 
             <hr />
-            <div>
-                <button type="submit" class="btn-submit"><i class="fas fa-check me-1"></i> Submit</button>
-                <a asp-action="Index" class="btn-history"><i class="fas fa-history me-1"></i> View History</a>
-            </div>
+
+            <button type="submit" class="btn-submit">
+                <i class="fas fa-check me-1"></i>
+                Submit
+            </button>
+
+            <a asp-action="Index" class="btn-history">
+                <i class="fas fa-history me-1"></i>
+                View History
+            </a>
+
         </form>
+
     </div>
+
 </div>
 
 @section Scripts {
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.5/jquery.validate.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validation-unobtrusive/3.2.13/jquery.validate.unobtrusive.min.js"></script>
+
+    <partial name="_ValidationScriptsPartial" />
+
+    <script>
+
+        // Prevent invalid keys
+
+        function blockInvalidKeys(e) {
+
+            if (
+                e.key === "e" ||
+                e.key === "E" ||
+                e.key === "+" ||
+                e.key === "-" ||
+                e.key === "."
+            ) {
+
+                e.preventDefault();
+
+            }
+
+        }
+
+        // Custom Validation
+
+        document.getElementById("stockForm").addEventListener("submit", function (e) {
+
+            let product = document.getElementById("ProductId");
+            let quantity = document.getElementById("Quantity");
+            let remarks = document.getElementById("Remarks");
+            let transaction =
+                document.querySelector('input[name="TransactionType"]:checked');
+
+            // Product
+
+            if (product.value == "") {
+
+                alert("Please select a product.");
+
+                product.focus();
+
+                e.preventDefault();
+
+                return;
+
+            }
+
+            // Quantity
+
+            if (quantity.value.trim() == "") {
+
+                alert("Quantity is required.");
+
+                quantity.focus();
+
+                e.preventDefault();
+
+                return;
+
+            }
+
+            let qty = parseInt(quantity.value);
+
+            if (isNaN(qty)) {
+
+                alert("Quantity must be numeric.");
+
+                quantity.focus();
+
+                e.preventDefault();
+
+                return;
+
+            }
+
+            if (qty < 1 || qty > 1000) {
+
+                alert("Quantity must be between 1 and 1000.");
+
+                quantity.focus();
+
+                e.preventDefault();
+
+                return;
+
+            }
+
+            // Transaction Type
+
+            if (transaction == null) {
+
+                alert("Please select transaction type.");
+
+                e.preventDefault();
+
+                return;
+
+            }
+
+            // Remarks
+
+            if (remarks.value.length > 500) {
+
+                alert("Remarks cannot exceed 500 characters.");
+
+                remarks.focus();
+
+                e.preventDefault();
+
+                return;
+
+            }
+
+        });
+
+    </script>
+
 }

@@ -1,4 +1,6 @@
 ﻿using InventoryManagement.Helpers;
+using Microsoft.Data.SqlClient;
+using System;
 using System.Collections;
 using System.ComponentModel.DataAnnotations;
 using System.Data;
@@ -29,8 +31,6 @@ namespace InventoryManagement.Models
 
         public DateTime CreatedDate { get; set; } = DateTime.Now;
 
-
-
         // ================= GET ALL =================
 
         public static List<ProductModel> GetAll(
@@ -38,71 +38,65 @@ namespace InventoryManagement.Models
             string? search = null
         )
         {
-            List<ProductModel> list = new();
+            var list = new List<ProductModel>();
 
-            DataTable dt =
-                db.ExecuteStoredProcedure(
-                    "USP_GetProducts"
-                );
-
-            foreach (DataRow row in dt.Rows)
+            try
             {
-                string productName =
-                    row["ProductName"]
-                    .ToString() ?? "";
-
-                if (!string.IsNullOrEmpty(search))
+                if (db == null)
                 {
-                    if (!productName
-                        .ToLower()
-                        .Contains(
-                            search.ToLower()
-                        ))
-                    {
-                        continue;
-                    }
+                    throw new Exception("DatabaseHelper cannot be null.");
                 }
 
-                list.Add(new ProductModel
+                DataTable dt = db.ExecuteStoredProcedure("USP_GetProducts");
+
+                if (dt == null || dt.Rows.Count == 0)
                 {
-                    ProductId =
-                        Convert.ToInt32(
-                            row["ProductId"]
-                        ),
+                    return list;
+                }
 
-                    ProductName =
-                        productName,
+                foreach (DataRow row in dt.Rows)
+                {
+                    try
+                    {
+                        string productName = row["ProductName"]?.ToString() ?? "";
 
-                    CategoryId =
-                        Convert.ToInt32(
-                            row["CategoryId"]
-                        ),
+                        if (!string.IsNullOrEmpty(search))
+                        {
+                            if (!productName.ToLower().Contains(search.ToLower()))
+                            {
+                                continue;
+                            }
+                        }
 
-                    CategoryName =
-                        row["CategoryName"]
-                        .ToString() ?? "",
-
-                    Price =
-                        Convert.ToDecimal(
-                            row["Price"]
-                        ),
-
-                    Quantity =
-                        Convert.ToInt32(
-                            row["Quantity"]
-                        ),
-
-                    CreatedDate =
-                        Convert.ToDateTime(
-                            row["CreatedDate"]
-                        )
-                });
+                        list.Add(new ProductModel
+                        {
+                            ProductId = Convert.ToInt32(row["ProductId"]),
+                            ProductName = productName,
+                            CategoryId = Convert.ToInt32(row["CategoryId"]),
+                            CategoryName = row["CategoryName"]?.ToString() ?? "",
+                            Price = Convert.ToDecimal(row["Price"]),
+                            Quantity = Convert.ToInt32(row["Quantity"]),
+                            CreatedDate = Convert.ToDateTime(row["CreatedDate"])
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        // Log individual row error but continue processing
+                        Console.WriteLine($"Error processing product row: {ex.Message}");
+                    }
+                }
+            }
+            catch (SqlException ex)
+            {
+                throw new Exception("Database error while fetching products: " + ex.Message, ex);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Error fetching products: " + ex.Message, ex);
             }
 
             return list;
         }
-
-
 
         // ================= GET BY ID =================
 
@@ -111,179 +105,205 @@ namespace InventoryManagement.Models
             int id
         )
         {
-            Hashtable ht = new();
-
-            ht.Add(
-                "@ProductId",
-                id
-            );
-
-            DataTable dt =
-                db.ExecuteStoredProcedure(
-                    "USP_GetProductById",
-                    ht
-                );
-
-            if (dt.Rows.Count == 0)
+            try
             {
-                return null;
+                if (db == null)
+                {
+                    throw new Exception("DatabaseHelper cannot be null.");
+                }
+
+                if (id <= 0)
+                {
+                    return null;
+                }
+
+                var ht = new Hashtable();
+                ht.Add("@ProductId", id);
+
+                DataTable dt = db.ExecuteStoredProcedure("USP_GetProductById", ht);
+
+                if (dt == null || dt.Rows.Count == 0)
+                {
+                    return null;
+                }
+
+                DataRow row = dt.Rows[0];
+
+                return new ProductModel
+                {
+                    ProductId = Convert.ToInt32(row["ProductId"]),
+                    ProductName = row["ProductName"]?.ToString() ?? "",
+                    CategoryId = Convert.ToInt32(row["CategoryId"]),
+                    CategoryName = row["CategoryName"]?.ToString() ?? "",
+                    Price = Convert.ToDecimal(row["Price"]),
+                    Quantity = Convert.ToInt32(row["Quantity"]),
+                    CreatedDate = Convert.ToDateTime(row["CreatedDate"])
+                };
             }
-
-            DataRow row =
-                dt.Rows[0];
-
-            return new ProductModel
+            catch (SqlException ex)
             {
-                ProductId =
-                    Convert.ToInt32(
-                        row["ProductId"]
-                    ),
-
-                ProductName =
-                    row["ProductName"]
-                    .ToString() ?? "",
-
-                CategoryId =
-                    Convert.ToInt32(
-                        row["CategoryId"]
-                    ),
-
-                CategoryName =
-                    row["CategoryName"]
-                    .ToString() ?? "",
-
-                Price =
-                    Convert.ToDecimal(
-                        row["Price"]
-                    ),
-
-                Quantity =
-                    Convert.ToInt32(
-                        row["Quantity"]
-                    ),
-
-                CreatedDate =
-                    Convert.ToDateTime(
-                        row["CreatedDate"]
-                    )
-            };
+                throw new Exception($"Database error while fetching product with ID {id}: " + ex.Message, ex);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error fetching product with ID {id}: " + ex.Message, ex);
+            }
         }
-
-
 
         // ================= INSERT =================
 
-        public string Insert(
-            DatabaseHelper db
-        )
+        public string Insert(DatabaseHelper db)
         {
-            Hashtable ht =
-                new Hashtable();
+            try
+            {
+                if (db == null)
+                {
+                    throw new Exception("DatabaseHelper cannot be null.");
+                }
 
-            ht.Add(
-                "@ProductName",
-                ProductName
-            );
+                if (string.IsNullOrEmpty(ProductName))
+                {
+                    return "Product name cannot be empty.";
+                }
 
-            ht.Add(
-                "@CategoryId",
-                CategoryId
-            );
+                if (CategoryId <= 0)
+                {
+                    return "Invalid category selected.";
+                }
 
-            ht.Add(
-                "@Price",
-                Price
-            );
+                if (Price <= 0)
+                {
+                    return "Price must be greater than 0.";
+                }
 
-            ht.Add(
-                "@Quantity",
-                Quantity
-            );
+                if (Quantity < 0)
+                {
+                    return "Quantity cannot be negative.";
+                }
 
-            DataTable dt =
-                db.ExecuteStoredProcedure(
-                    "USP_InsertProduct",
-                    ht
-                );
+                var ht = new Hashtable();
+                ht.Add("@ProductName", ProductName);
+                ht.Add("@CategoryId", CategoryId);
+                ht.Add("@Price", Price);
+                ht.Add("@Quantity", Quantity);
 
-            return dt.Rows[0]
-                ["Message"]
-                .ToString() ?? "";
+                DataTable dt = db.ExecuteStoredProcedure("USP_InsertProduct", ht);
+
+                if (dt == null || dt.Rows.Count == 0)
+                {
+                    return "No response from database.";
+                }
+
+                return dt.Rows[0]["Message"]?.ToString() ?? "Unknown error occurred.";
+            }
+            catch (SqlException ex)
+            {
+                return "Database error: " + ex.Message;
+            }
+            catch (Exception ex)
+            {
+                return "Error: " + ex.Message;
+            }
         }
-
-
 
         // ================= UPDATE =================
 
-        public string Update(
-            DatabaseHelper db
-        )
+        public string Update(DatabaseHelper db)
         {
-            Hashtable ht =
-                new Hashtable();
+            try
+            {
+                if (db == null)
+                {
+                    throw new Exception("DatabaseHelper cannot be null.");
+                }
 
-            ht.Add(
-                "@ProductId",
-                ProductId
-            );
+                if (ProductId <= 0)
+                {
+                    return "Invalid product ID.";
+                }
 
-            ht.Add(
-                "@ProductName",
-                ProductName
-            );
+                if (string.IsNullOrEmpty(ProductName))
+                {
+                    return "Product name cannot be empty.";
+                }
 
-            ht.Add(
-                "@CategoryId",
-                CategoryId
-            );
+                if (CategoryId <= 0)
+                {
+                    return "Invalid category selected.";
+                }
 
-            ht.Add(
-                "@Price",
-                Price
-            );
+                if (Price <= 0)
+                {
+                    return "Price must be greater than 0.";
+                }
 
-            ht.Add(
-                "@Quantity",
-                Quantity
-            );
+                if (Quantity < 0)
+                {
+                    return "Quantity cannot be negative.";
+                }
 
-            DataTable dt =
-                db.ExecuteStoredProcedure(
-                    "USP_UpdateProduct",
-                    ht
-                );
+                var ht = new Hashtable();
+                ht.Add("@ProductId", ProductId);
+                ht.Add("@ProductName", ProductName);
+                ht.Add("@CategoryId", CategoryId);
+                ht.Add("@Price", Price);
+                ht.Add("@Quantity", Quantity);
 
-            return dt.Rows[0]
-                ["Message"]
-                .ToString() ?? "";
+                DataTable dt = db.ExecuteStoredProcedure("USP_UpdateProduct", ht);
+
+                if (dt == null || dt.Rows.Count == 0)
+                {
+                    return "No response from database.";
+                }
+
+                return dt.Rows[0]["Message"]?.ToString() ?? "Unknown error occurred.";
+            }
+            catch (SqlException ex)
+            {
+                return "Database error: " + ex.Message;
+            }
+            catch (Exception ex)
+            {
+                return "Error: " + ex.Message;
+            }
         }
-
-
 
         // ================= DELETE =================
 
-        public static string Delete(
-            DatabaseHelper db,
-            int id
-        )
+        public static string Delete(DatabaseHelper db, int id)
         {
-            Hashtable ht =
-                new Hashtable();
+            try
+            {
+                if (db == null)
+                {
+                    throw new Exception("DatabaseHelper cannot be null.");
+                }
 
-            ht.Add(
-                "@ProductId",
-                id
-            );
+                if (id <= 0)
+                {
+                    return "Invalid product ID.";
+                }
 
-            DataTable dt =
-                db.ExecuteStoredProcedure(
-                    "USP_DeleteProduct",
-                    ht
-                );
+                var ht = new Hashtable();
+                ht.Add("@ProductId", id);
 
-            return dt.Rows[0]
-                ["Message"]
-                .ToString() ?? "";
+                DataTable dt = db.ExecuteStoredProcedure("USP_DeleteProduct", ht);
+
+                if (dt == null || dt.Rows.Count == 0)
+                {
+                    return "No response from database.";
+                }
+
+                return dt.Rows[0]["Message"]?.ToString() ?? "Unknown error occurred.";
+            }
+            catch (SqlException ex)
+            {
+                return "Database error: " + ex.Message;
+            }
+            catch (Exception ex)
+            {
+                return "Error: " + ex.Message;
+            }
         }
     }
 }

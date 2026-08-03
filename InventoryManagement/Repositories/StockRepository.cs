@@ -1,5 +1,6 @@
 ﻿using InventoryManagement.Helpers;
 using InventoryManagement.Models;
+using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections;
@@ -14,304 +15,302 @@ namespace InventoryManagement.Repositories
 
         public StockRepository(IConfiguration configuration)
         {
-            _dbHelper = new DatabaseHelper(configuration);
+            try
+            {
+                _dbHelper = new DatabaseHelper(configuration);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception("Failed to initialize StockRepository: " + ex.Message, ex);
+            }
         }
 
-        // Get transactions with optional date filter
+        // ========== GET STOCK TRANSACTIONS (Stored Procedure) ==========
         public List<StockTransactionModel> GetStockTransactions(
             DateTime? fromDate,
             DateTime? toDate
         )
         {
-            List<StockTransactionModel> transactions =
-                new List<StockTransactionModel>();
+            var transactions = new List<StockTransactionModel>();
 
-            Hashtable ht =
-                new Hashtable();
-
-            ht.Add(
-                "@FromDate",
-
-                fromDate.HasValue
-
-                ? fromDate.Value
-
-                : DBNull.Value
-            );
-
-            ht.Add(
-                "@ToDate",
-
-                toDate.HasValue
-
-                ? toDate.Value
-
-                : DBNull.Value
-            );
-
-            DataTable dt =
-                _dbHelper.ExecuteStoredProcedure(
-                    "USP_GetStockTransactions",
-                    ht
-                );
-
-            foreach (DataRow row in dt.Rows)
+            try
             {
-                transactions.Add(
-                    new StockTransactionModel
+                var ht = new Hashtable();
+                ht.Add("@FromDate",
+                    fromDate.HasValue
+                        ? (object)fromDate.Value
+                        : DBNull.Value);
+
+                ht.Add("@ToDate",
+                    toDate.HasValue
+                        ? (object)toDate.Value
+                        : DBNull.Value);
+
+                DataTable dt = _dbHelper.ExecuteStoredProcedure(
+                    "USP_GetStockTransactions",
+                    ht);
+
+                if (dt == null || dt.Rows.Count == 0)
+                {
+                    return transactions;
+                }
+
+                foreach (DataRow row in dt.Rows)
+                {
+                    try
                     {
-                        TransactionId =
-                            Convert.ToInt32(
-                            row["TransactionId"]
-                            ),
+                        transactions.Add(new StockTransactionModel
+                        {
+                            TransactionId = Convert.ToInt32(row["TransactionId"]),
+                            ProductId = Convert.ToInt32(row["ProductId"]),
+                            ProductName = row["ProductName"]?.ToString() ?? "",
+                            Quantity = Convert.ToInt32(row["Quantity"]),
+                            TransactionType = row["TransactionType"]?.ToString() ?? "",
+                            TransactionDate = Convert.ToDateTime(row["TransactionDate"]),
 
-                        ProductId =
-                            Convert.ToInt32(
-                            row["ProductId"]
-                            ),
+                            Remarks = row.Table.Columns.Contains("Remarks")
+                                ? row["Remarks"]?.ToString() ?? ""
+                                : "",
 
-                        Quantity =
-                            Convert.ToInt32(
-                            row["Quantity"]
-                            ),
-
-                        TransactionType =
-                            row["TransactionType"]
-                            .ToString()
-                            ?? "",
-
-                        TransactionDate =
-                            Convert.ToDateTime(
-                            row["TransactionDate"]
-                            ),
-
-                        ProductName =
-                            row["ProductName"]
-                            .ToString()
-                            ?? "",
-
-                        Remarks =
-                            row.Table.Columns.Contains("Remarks")
-
-                            ? row["Remarks"]
-                            .ToString()
-                            ?? ""
-
-                            : ""
+                            // Running Stock Mapping
+                            RunningStock =
+                                row.Table.Columns.Contains("RunningStock") &&
+                                row["RunningStock"] != DBNull.Value
+                                    ? Convert.ToInt32(row["RunningStock"])
+                                    : 0
+                        });
                     }
-                );
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(
+                            $"Error processing transaction row: {ex.Message}");
+                    }
+                }
+            }
+            catch (SqlException ex)
+            {
+                throw new Exception(
+                    "Database error while fetching stock transactions: " +
+                    ex.Message,
+                    ex);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(
+                    "Error fetching stock transactions: " +
+                    ex.Message,
+                    ex);
             }
 
             return transactions;
         }
 
-        // Insert Transaction
-        public (bool Success, string Message)
-        InsertStockTransaction(
-            StockTransactionModel model
-        )
+        // ========== INSERT STOCK TRANSACTION (Stored Procedure) ==========
+
+        public (bool Success, string Message) InsertStockTransaction(StockTransactionModel model)
         {
-            Hashtable ht =
-                new Hashtable();
+            try
+            {
+                if (model == null)
+                {
+                    return (false, "Transaction model cannot be null.");
+                }
 
-            ht.Add(
-                "@ProductId",
-                model.ProductId
-            );
+                // Product Validation
+                if (model.ProductId <= 0)
+                {
+                    return (false, "Please select a valid product.");
+                }
 
-            ht.Add(
-                "@TransactionType",
-                model.TransactionType
-            );
+                // Transaction Type Validation
+                if (string.IsNullOrWhiteSpace(model.TransactionType))
+                {
+                    return (false, "Please select transaction type.");
+                }
 
-            ht.Add(
-                "@Quantity",
-                model.Quantity
-            );
+                if (model.TransactionType != "In" &&
+                    model.TransactionType != "Out")
+                {
+                    return (false, "Invalid transaction type.");
+                }
 
-            ht.Add(
-                "@Remarks",
+                // Quantity Validation
+                if (model.Quantity < 1 || model.Quantity > 1000)
+                {
+                    return (false, "Quantity must be between 1 and 1000.");
+                }
 
-                string.IsNullOrEmpty(
-                model.Remarks
-                )
+                var ht = new Hashtable();
 
-                ? DBNull.Value
+                ht.Add("@ProductId", model.ProductId);
+                ht.Add("@TransactionType", model.TransactionType);
+                ht.Add("@Quantity", model.Quantity);
 
-                : model.Remarks
-            );
+                // Remarks (Optional)
+                ht.Add(
+                    "@Remarks",
+                    string.IsNullOrWhiteSpace(model.Remarks)
+                        ? DBNull.Value
+                        : (object)model.Remarks.Trim()
+                );
 
-            DataTable dt =
-                _dbHelper.ExecuteStoredProcedure(
+                DataTable dt = _dbHelper.ExecuteStoredProcedure(
                     "USP_InsertStockTransaction",
                     ht
                 );
 
-            if (dt.Rows.Count > 0)
-            {
-                int result =
-                    Convert.ToInt32(
-                    dt.Rows[0]["Result"]
-                    );
+                if (dt != null && dt.Rows.Count > 0)
+                {
+                    int result = Convert.ToInt32(dt.Rows[0]["Result"]);
+                    string message = dt.Rows[0]["Message"]?.ToString() ?? "Unknown";
 
-                string message =
-                    dt.Rows[0]["Message"]
-                    .ToString()
-                    ?? "Unknown";
+                    return (result == 1, message);
+                }
 
-                return (
-                    result == 1,
-                    message
-                );
+                return (false, "No response from database.");
             }
-
-            return (
-                false,
-                "Unknown error occurred"
-            );
+            catch (SqlException ex)
+            {
+                return (false, "Database error: " + ex.Message);
+            }
+            catch (Exception ex)
+            {
+                return (false, "Error: " + ex.Message);
+            }
         }
 
-        // Product wise transactions
-        public List<StockTransactionModel>
-        GetStockTransactionsByProduct(
-            int productId
-        )
+        // ========== GET STOCK TRANSACTIONS BY PRODUCT (Stored Procedure) ==========
+        public List<StockTransactionModel> GetStockTransactionsByProduct(int productId)
         {
-            List<StockTransactionModel>
-            transactions =
-            new List<StockTransactionModel>();
+            var transactions = new List<StockTransactionModel>();
 
-            Hashtable ht =
-            new Hashtable();
-
-            ht.Add(
-            "@ProductId",
-            productId
-            );
-
-            DataTable dt =
-            _dbHelper.ExecuteStoredProcedure(
-            "USP_GetStockTransactionsByProduct",
-            ht
-            );
-
-            foreach (DataRow row in dt.Rows)
+            try
             {
-                transactions.Add(
-                new StockTransactionModel
+                if (productId <= 0)
                 {
-                    TransactionId =
-                    Convert.ToInt32(
-                    row["TransactionId"]
-                    ),
+                    return transactions;
+                }
 
-                    ProductId =
-                    Convert.ToInt32(
-                    row["ProductId"]
-                    ),
+                var ht = new Hashtable();
+                ht.Add("@ProductId", productId);
 
-                    Quantity =
-                    Convert.ToInt32(
-                    row["Quantity"]
-                    ),
+                DataTable dt = _dbHelper.ExecuteStoredProcedure(
+                    "USP_GetStockTransactionsByProduct",
+                    ht);
 
-                    TransactionType =
-                    row["TransactionType"]
-                    .ToString()
-                    ?? "",
+                if (dt == null || dt.Rows.Count == 0)
+                {
+                    return transactions;
+                }
 
-                    TransactionDate =
-                    Convert.ToDateTime(
-                    row["TransactionDate"]
-                    ),
+                foreach (DataRow row in dt.Rows)
+                {
+                    try
+                    {
+                        transactions.Add(new StockTransactionModel
+                        {
+                            TransactionId = Convert.ToInt32(row["TransactionId"]),
+                            ProductId = Convert.ToInt32(row["ProductId"]),
+                            ProductName = row.Table.Columns.Contains("ProductName")
+                                ? row["ProductName"]?.ToString() ?? ""
+                                : "",
+                            Quantity = Convert.ToInt32(row["Quantity"]),
+                            TransactionType = row["TransactionType"]?.ToString() ?? "",
+                            TransactionDate = Convert.ToDateTime(row["TransactionDate"]),
 
-                    ProductName =
-                    row["ProductName"]
-                    .ToString()
-                    ?? "",
+                            Remarks = row.Table.Columns.Contains("Remarks")
+                                ? row["Remarks"]?.ToString() ?? ""
+                                : "",
 
-                    Remarks =
-                    row.Table.Columns.Contains(
-                    "Remarks"
-                    )
-
-                    ? row["Remarks"]
-                    .ToString()
-                    ?? ""
-
-                    : ""
-                });
+                            // Running Stock Mapping
+                            RunningStock = row.Table.Columns.Contains("RunningStock")
+                                && row["RunningStock"] != DBNull.Value
+                                ? Convert.ToInt32(row["RunningStock"])
+                                : 0
+                        });
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error processing transaction row: {ex.Message}");
+                    }
+                }
+            }
+            catch (SqlException ex)
+            {
+                throw new Exception(
+                    "Database error while fetching product transactions: " +
+                    ex.Message, ex);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(
+                    "Error fetching product transactions: " +
+                    ex.Message, ex);
             }
 
             return transactions;
         }
 
-        // Dashboard Stats
-        public DashboardModel
-        GetDashboardStats()
+        // ========== GET DASHBOARD STATS (Stored Procedure) ==========
+        public DashboardModel GetDashboardStats()
         {
-            DashboardModel stats =
-                new DashboardModel();
+            var stats = new DashboardModel();
 
-            DataTable dt =
-                _dbHelper.ExecuteStoredProcedure(
-                "USP_GetDashboardStats"
-                );
-
-            if (dt.Rows.Count > 0)
+            try
             {
-                DataRow row =
-                    dt.Rows[0];
+                DataTable dt = _dbHelper.ExecuteStoredProcedure("USP_GetDashboardStats");
 
-                stats.TotalCategories =
-                    Convert.ToInt32(
-                    row["TotalCategories"]
-                    );
+                if (dt != null && dt.Rows.Count > 0)
+                {
+                    DataRow row = dt.Rows[0];
 
-                stats.TotalProducts =
-                    Convert.ToInt32(
-                    row["TotalProducts"]
-                    );
-
-                stats.LowStockCount =
-                    Convert.ToInt32(
-                    row["LowStockCount"]
-                    );
-
-                stats.TodayTransactions =
-                    Convert.ToInt32(
-                    row["TodayTransactions"]
-                    );
+                    stats.TotalCategories = Convert.ToInt32(row["TotalCategories"]);
+                    stats.TotalProducts = Convert.ToInt32(row["TotalProducts"]);
+                    stats.LowStockCount = Convert.ToInt32(row["LowStockCount"]);
+                    stats.TodayTransactions = Convert.ToInt32(row["TodayTransactions"]);
+                }
+            }
+            catch (SqlException ex)
+            {
+                throw new Exception(
+                    "Database error while fetching dashboard stats: " +
+                    ex.Message, ex);
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(
+                    "Error fetching dashboard stats: " +
+                    ex.Message, ex);
             }
 
             return stats;
         }
 
-        public bool AddTransaction(
-            StockEntryModel model
-        )
+        // ========== ADD TRANSACTION (HELPER) ==========
+        public bool AddTransaction(StockEntryModel model)
         {
-            var result =
-            InsertStockTransaction(
-            new StockTransactionModel
+            try
             {
-                ProductId =
-                model.ProductId,
+                if (model == null)
+                {
+                    return false;
+                }
 
-                Quantity =
-                model.Quantity,
+                var result = InsertStockTransaction(new StockTransactionModel
+                {
+                    ProductId = model.ProductId,
+                    Quantity = model.Quantity,
+                    TransactionType = model.TransactionType ?? "",
+                    Remarks = model.Remarks ?? ""
+                });
 
-                TransactionType =
-                model.TransactionType,
-
-                TransactionDate =
-                DateTime.Now,
-
-                Remarks =
-                model.Remarks
-            });
-
-            return result.Success;
+                return result.Success;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error in AddTransaction: {ex.Message}");
+                return false;
+            }
         }
     }
 }
