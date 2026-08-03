@@ -1,24 +1,31 @@
 ﻿using InventoryManagement.Helpers;
 using InventoryManagement.Models;
+using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Data.SqlClient;
 using System;
+using System.IO;
 
 namespace InventoryManagement.Controllers
 {
     public class AccountController : Controller
     {
         private readonly DatabaseHelper _db;
+        private readonly IWebHostEnvironment _environment;
 
-        public AccountController(DatabaseHelper db)
+        public AccountController(DatabaseHelper db, IWebHostEnvironment environment)
         {
             _db = db;
+            _environment = environment;
         }
 
-        // ========== HELPER METHODS ==========
+        // ================= HELPER METHODS =================
+
         private bool IsUserLoggedIn()
         {
-            return !string.IsNullOrEmpty(HttpContext.Session.GetString("Username"));
+            return !string.IsNullOrEmpty(
+                HttpContext.Session.GetString("Username"));
         }
 
         private bool IsAdmin()
@@ -26,48 +33,16 @@ namespace InventoryManagement.Controllers
             return HttpContext.Session.GetString("Role") == "1";
         }
 
-        // ========== LOGIN ==========
+        // ================= LOGIN =================
+
         [HttpGet]
         public IActionResult Login()
         {
             if (IsUserLoggedIn())
                 return RedirectToAction("Index", "Dashboard");
+
             return View();
         }
-
-        //[HttpPost]
-        //[ValidateAntiForgeryToken]
-        //public IActionResult Login(LoginModel model)
-        //{
-        //    if (!ModelState.IsValid)
-        //        return View(model);
-
-        //    try
-        //    {
-        //        var user = UserModel.ValidateUser(model.Username, model.Password, _db);
-
-        //        if (user != null)
-        //        {
-        //            HttpContext.Session.SetString("Username", user.Username);
-        //            HttpContext.Session.SetString("UserId", user.UserId.ToString());
-        //            HttpContext.Session.SetString("Role", user.Role);
-        //            HttpContext.Session.SetString("IsAdmin", (user.Role == "1").ToString());
-
-        //            TempData["LoginSuccess"] = "Welcome to Dashboard!";
-        //            return RedirectToAction("Index", "Dashboard");
-        //        }
-        //        else
-        //        {
-        //            ModelState.AddModelError(string.Empty, "Invalid username or password.");
-        //        }
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        ModelState.AddModelError(string.Empty, ex.Message);
-        //    }
-
-        //    return View(model);
-        //}
 
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -76,99 +51,158 @@ namespace InventoryManagement.Controllers
             try
             {
                 if (!ModelState.IsValid)
-                {
                     return View(model);
-                }
 
-                var result = UserModel.ValidateUser(model.Username, model.Password, _db);
+                var result = UserModel.ValidateUser(
+                    model.Username,
+                    model.Password,
+                    _db);
 
                 if (result.User != null)
                 {
-                    HttpContext.Session.SetString("Username", result.User.Username);
-                    HttpContext.Session.SetString("UserId", result.User.UserId.ToString());
-                    HttpContext.Session.SetString("Role", result.User.Role);
-                    HttpContext.Session.SetString("IsAdmin", (result.User.Role == "1").ToString());
+                    HttpContext.Session.SetString(
+                        "Username",
+                        result.User.Username);
 
-                    TempData["LoginSuccess"] = "Welcome to Dashboard!";
-                    return RedirectToAction("Index", "Dashboard");
+                    HttpContext.Session.SetString(
+                        "UserId",
+                        result.User.UserId.ToString());
+
+                    HttpContext.Session.SetString(
+                        "Role",
+                        result.User.Role);
+
+                    HttpContext.Session.SetString(
+                        "IsAdmin",
+                        (result.User.Role == "1").ToString());
+
+                    TempData["LoginSuccess"] =
+                        "Welcome to Dashboard!";
+
+                    return RedirectToAction(
+                        "Index",
+                        "Dashboard");
                 }
 
-                // Show error below the respective field
                 if (result.Message == "Username is incorrect.")
                 {
-                    ModelState.AddModelError(nameof(model.Username), result.Message);
+                    ModelState.AddModelError(
+                        nameof(model.Username),
+                        result.Message);
                 }
                 else if (result.Message == "Password is incorrect.")
                 {
-                    ModelState.AddModelError(nameof(model.Password), result.Message);
+                    ModelState.AddModelError(
+                        nameof(model.Password),
+                        result.Message);
                 }
                 else
                 {
-                    ModelState.AddModelError(string.Empty, result.Message);
+                    ModelState.AddModelError(
+                        "",
+                        result.Message);
                 }
 
                 return View(model);
             }
             catch (SqlException ex)
             {
-                ModelState.AddModelError(string.Empty, "Database error: " + ex.Message);
+                ModelState.AddModelError(
+                    "",
+                    "Database Error : " + ex.Message);
+
                 return View(model);
             }
             catch (Exception ex)
             {
-                ModelState.AddModelError(string.Empty, "Error: " + ex.Message);
+                ModelState.AddModelError(
+                    "",
+                    ex.Message);
+
                 return View(model);
             }
         }
 
+        // ================= SIGNUP =================
 
-        // ========== SIGNUP ==========
         [HttpGet]
         public IActionResult Signup()
         {
             if (IsUserLoggedIn())
                 return RedirectToAction("Index", "Dashboard");
+
             return View();
         }
 
+        
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult Signup(UserModel model)
         {
-            if (!ModelState.IsValid)
+            try
+            {
+                if (!ModelState.IsValid)
+                    return View(model);
+
+                // Upload Profile Image
+                if (model.ProfileImageFile != null && model.ProfileImageFile.Length > 0)
+                {
+                    string uploadFolder = Path.Combine(_environment.WebRootPath, "ProfileImages");
+
+                    if (!Directory.Exists(uploadFolder))
+                    {
+                        Directory.CreateDirectory(uploadFolder);
+                    }
+
+                    string fileName = Guid.NewGuid().ToString() +
+                                      Path.GetExtension(model.ProfileImageFile.FileName);
+
+                    string filePath = Path.Combine(uploadFolder, fileName);
+
+                    using (FileStream stream = new FileStream(filePath, FileMode.Create))
+                    {
+                        model.ProfileImageFile.CopyTo(stream);
+                    }
+
+                    model.ProfileImage = fileName;
+                }
+
+                // Hobbies
+                if (model.SelectedHobbies != null && model.SelectedHobbies.Any())
+                {
+                    model.Hobbies = string.Join(",", model.SelectedHobbies);
+                }
+
+                var result = UserModel.CreateUser(model, _db);
+
+                if (result.Result == 0)
+                {
+                    TempData["SignupSuccess"] = result.Message;
+                    return RedirectToAction("Login");
+                }
+
+                ModelState.AddModelError("", result.Message);
                 return View(model);
-
-            var (result, message) = UserModel.CreateUser(
-                model.Username,
-                model.Email,
-                model.Password,
-                model.ConfirmPassword,
-                _db
-            );
-
-            if (result == 0)
-            {
-                TempData["SignupSuccess"] = message;
-                return RedirectToAction("Login");
             }
-            else
+            catch (Exception ex)
             {
-                ModelState.AddModelError(string.Empty, message);
+                ModelState.AddModelError("", ex.Message);
+                return View(model);
             }
-
-            return View(model);
         }
+        // ================= LOGOUT =================
 
-        // ========== LOGOUT ==========
         public IActionResult Logout()
         {
             HttpContext.Session.Clear();
+
             Response.Cookies.Delete(".AspNetCore.Session");
-            //TempData.Clear();
+
             return RedirectToAction("Login");
         }
 
-        // ========== INVENTORY ACCESS (Admin only) ==========
+        // ================= INVENTORY ACCESS =================
+
         [HttpGet]
         public IActionResult InventoryAccess()
         {
@@ -177,107 +211,181 @@ namespace InventoryManagement.Controllers
 
             if (!IsAdmin())
             {
-                TempData["Error"] = "Access Denied. Only admin can manage user roles.";
+                TempData["Error"] =
+                    "Access Denied. Only Admin can manage user roles.";
+
                 return RedirectToAction("Index", "Dashboard");
             }
 
             return View();
         }
 
-        // ========== GET ALL USERS (Admin only) ==========
+        // ================= GET ALL USERS =================
+
         [HttpGet]
         public JsonResult GetAllUsers()
         {
             try
             {
                 if (!IsAdmin())
-                    return Json(new { success = false, message = "Unauthorized." });
-
-                var users = UserModel.GetUsersForDropdown(_db);
-
-                if (users == null || users.Count == 0)
                 {
-                    return Json(new { success = false, message = "Role Update Sucessfully." });
+                    return Json(new
+                    {
+                        success = false,
+                        message = "Unauthorized."
+                    });
                 }
 
-                return Json(new { success = true, data = users });
+                var users = UserModel.GetAllUsers(_db);
+
+                return Json(new
+                {
+                    success = true,
+                    data = users
+                });
             }
             catch (Exception ex)
             {
-                return Json(new { success = false, message = ex.Message });
+                return Json(new
+                {
+                    success = false,
+                    message = ex.Message
+                });
             }
         }
 
-        // ========== UPDATE USER ROLE (Admin only) ==========
+        // ================= UPDATE USER ROLE =================
+
         [HttpPost]
-        public JsonResult UpdateUserRole(int userId, string newRole)
+        public JsonResult UpdateUserRole(
+            int userId,
+            string newRole)
         {
             try
             {
                 if (!IsAdmin())
-                    return Json(new { success = false, message = "Unauthorized – only admin can modify roles." });
-
-                var currentUserId = HttpContext.Session.GetString("UserId");
-                var (success, message) = UserModel.UpdateUserRole(userId, newRole, _db, currentUserId);
-
-                if (success)
                 {
-                    bool isCurrentUser = currentUserId != null && currentUserId == userId.ToString();
+                    return Json(new
+                    {
+                        success = false,
+                        message = "Unauthorized."
+                    });
+                }
+
+                string? currentUserId =
+                    HttpContext.Session.GetString("UserId");
+
+                var result =
+                    UserModel.UpdateUserRole(
+                        userId,
+                        newRole,
+                        _db,
+                        currentUserId);
+
+                if (result.Success)
+                {
+                    bool isCurrentUser =
+                        currentUserId != null &&
+                        currentUserId == userId.ToString();
 
                     if (isCurrentUser)
                     {
-                        HttpContext.Session.SetString("Role", newRole);
-                        HttpContext.Session.SetString("IsAdmin", (newRole == "1").ToString());
+                        HttpContext.Session.SetString(
+                            "Role",
+                            newRole);
+
+                        HttpContext.Session.SetString(
+                            "IsAdmin",
+                            (newRole == "1").ToString());
                     }
 
                     return Json(new
                     {
                         success = true,
-                        message = message,
+                        message = result.Message,
                         forceLogout = isCurrentUser
                     });
                 }
-                else
+
+                return Json(new
                 {
-                    return Json(new { success = false, message = message });
-                }
+                    success = false,
+                    message = result.Message
+                });
             }
             catch (Exception ex)
             {
-                return Json(new { success = false, message = "Error: " + ex.Message });
+                return Json(new
+                {
+                    success = false,
+                    message = ex.Message
+                });
             }
         }
 
-        // ========== GET USERS (Legacy) ==========
+        // ================= GET USERS =================
+
         [HttpGet]
         public JsonResult GetUsers()
         {
             try
             {
                 if (!IsAdmin())
-                    return Json(new { success = false, message = "Unauthorized." });
+                {
+                    return Json(new
+                    {
+                        success = false,
+                        message = "Unauthorized."
+                    });
+                }
 
-                var users = UserModel.GetUsersForDropdown(_db);
-                return Json(new { success = true, data = users });
+                var users =
+                    UserModel.GetUsersForDropdown(_db);
+
+                return Json(new
+                {
+                    success = true,
+                    data = users
+                });
             }
             catch (Exception ex)
             {
-                return Json(new { success = false, message = ex.Message });
+                return Json(new
+                {
+                    success = false,
+                    message = ex.Message
+                });
             }
         }
 
-        // ========== USER EXISTS (Legacy) ==========
+        // ================= CHECK USER EXISTS =================
+
         [HttpGet]
-        public JsonResult CheckUserExists(string username, string email)
+        public JsonResult CheckUserExists(
+            string username,
+            string email)
         {
             try
             {
-                bool exists = UserModel.UserExists(username, email, _db);
-                return Json(new { success = true, exists = exists });
+                bool exists =
+                    UserModel.UserExists(
+                        username,
+                        email,
+                        _db);
+
+                return Json(new
+                {
+                    success = true,
+                    exists = exists
+                });
             }
             catch (Exception ex)
             {
-                return Json(new { success = false, message = ex.Message });
+                return Json(new
+                {
+                    success = false,
+                    message = ex.Message
+                });
             }
         }
     }

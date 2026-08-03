@@ -5,6 +5,8 @@ using System.Collections;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Data;
+using System.ComponentModel.DataAnnotations.Schema;
+using Microsoft.AspNetCore.Http;
 
 namespace InventoryManagement.Models
 {
@@ -12,83 +14,91 @@ namespace InventoryManagement.Models
     {
         public int UserId { get; set; }
 
-        //[Required(ErrorMessage = "Username is required.")]
-        //[StringLength(20, ErrorMessage = "Username cannot be more than 20 characters.")]
-        //[RegularExpression(@"^[a-zA-Z0-9_]+$", ErrorMessage = "Username can contain only letters, numbers, and underscores.")]
-        //public string Username { get; set; } = string.Empty;
+        // ================= BASIC DETAILS =================
 
         [Required(ErrorMessage = "Username is required.")]
         [StringLength(20, ErrorMessage = "Username cannot be more than 20 characters.")]
-        [RegularExpression(@"^[a-zA-Z][a-zA-Z0-9_]*$", ErrorMessage = "Username must start with a letter and can contain only letters, numbers, and underscores.")]
+        [RegularExpression(@"^[a-zA-Z][a-zA-Z0-9_]*$",
+            ErrorMessage = "Username must start with a letter and can contain only letters, numbers, and underscores.")]
         public string Username { get; set; } = string.Empty;
+
         [Required(ErrorMessage = "Email is required.")]
         [EmailAddress(ErrorMessage = "Enter a valid email address.")]
-        [RegularExpression(@"^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$",
-            ErrorMessage = "Enter a valid email address.")]
         public string Email { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Password is required.")]
         [RegularExpression(
             @"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$",
-            ErrorMessage = "Password must be at least 8 characters and contain an uppercase letter, lowercase letter, number, and special character."
-        )]
+            ErrorMessage = "Password must contain uppercase, lowercase, number and special character.")]
         public string Password { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Confirm Password is required.")]
         [Compare("Password", ErrorMessage = "Passwords do not match.")]
         public string ConfirmPassword { get; set; } = string.Empty;
 
+        // ================= NEW SIGNUP FIELDS =================
+
+        [Required]
+        [RegularExpression(@"^[6-9]\d{9}$",
+            ErrorMessage = "Enter valid mobile number.")]
+        public string MobileNo { get; set; } = string.Empty;
+
+        [Required]
+        public DateTime? DOB { get; set; }
+
+        [Required]
+        public string Gender { get; set; } = string.Empty;
+
+        [Required]
+        public string MaritalStatus { get; set; } = string.Empty;
+
+        [Required]
+        public string Address { get; set; } = string.Empty;
+
+        public string? Hobbies { get; set; }
+        [NotMapped]
+        public List<string> SelectedHobbies { get; set; } = new();
+
+        public string? ProfileImage { get; set; }
+        [NotMapped]
+        public IFormFile? ProfileImageFile { get; set; }
+
+        // ================= SYSTEM FIELDS =================
+
         public string Role { get; set; } = "2";
+
         public bool IsActive { get; set; } = true;
+
         public DateTime? CreatedDate { get; set; }
 
-        // ========== VALIDATE USER (LOGIN) ==========
-        //public static UserModel? ValidateUser(string username, string password, DatabaseHelper db)
-        //{
-        //    Hashtable parameters = new Hashtable
-        //    {
-        //        { "@UserName", username },
-        //        { "@Password", password }
-        //    };
+        // ================= LOGIN =================
 
-        //    DataTable dt = db.ExecuteStoredProcedure("ValidateUser", parameters);
-
-        //    if (dt.Rows.Count > 0)
-        //    {
-        //        DataRow row = dt.Rows[0];
-        //        return new UserModel
-        //        {
-        //            UserId = Convert.ToInt32(row["UserId"]),
-        //            Username = row["Username"]?.ToString() ?? string.Empty,
-        //            Role = row["Role"]?.ToString() ?? "2"
-        //        };
-        //    }
-        //    return null;
-        //}
-
-        public static (UserModel? User, string Message) ValidateUser(string username, string password, DatabaseHelper db)
+        public static (UserModel? User, string Message) ValidateUser(
+            string username,
+            string password,
+            DatabaseHelper db)
         {
-            // Username check
             Hashtable htUser = new Hashtable
-    {
-        { "@UserName", username }
-    };
+            {
+                { "@UserName", username }
+            };
 
-            DataTable dtUser = db.ExecuteStoredProcedure("USP_CheckUserName", htUser);
+            DataTable dtUser =
+                db.ExecuteStoredProcedure("USP_CheckUserName", htUser);
 
             if (dtUser.Rows.Count == 0)
             {
                 return (null, "Username is incorrect.");
             }
 
-            // Password check
             Hashtable htLogin = new Hashtable
-    {
-        { "@UserName", username },
-        { "@Password", password }
-    };
+            {
+                { "@UserName", username },
+                { "@Password", password }
+            };
 
-            DataTable dt = db.ExecuteStoredProcedure("ValidateUser", htLogin);
+            DataTable dt =
+                db.ExecuteStoredProcedure("ValidateUser", htLogin);
 
             if (dt.Rows.Count == 0)
             {
@@ -100,74 +110,84 @@ namespace InventoryManagement.Models
             UserModel user = new UserModel
             {
                 UserId = Convert.ToInt32(row["UserId"]),
-                Username = row["Username"]?.ToString() ?? "",
-                Role = row["Role"]?.ToString() ?? "2"
+                Username = row["Username"].ToString() ?? "",
+                Email = row["Email"].ToString() ?? "",
+                Role = row["Role"].ToString() ?? "2"
             };
 
             return (user, "Login Successful");
         }
 
-        // ========== CREATE USER (SIGNUP) ==========
+        // ================= CREATE USER =================
+
         public static (int Result, string Message) CreateUser(
-            string username,
-            string email,
-            string password,
-            string confirmPassword,
+
+            UserModel model,
+
             DatabaseHelper db)
+
         {
-            Hashtable parameters = new Hashtable
-            {
-                { "@Username", username },
-                { "@Email", email },
-                { "@Password", password },
-                { "@ConfirmPassword", confirmPassword }
-            };
             try
             {
                 string connStr = db.GetConnection().ConnectionString;
-                using (SqlConnection conn = new SqlConnection(connStr))
+
+                using SqlConnection conn = new SqlConnection(connStr);
+
+                conn.Open();
+
+                using SqlCommand cmd = new SqlCommand("Create_New_User", conn);
+
+                cmd.CommandType = CommandType.StoredProcedure;
+
+                cmd.Parameters.AddWithValue("@Username", model.Username);
+                cmd.Parameters.AddWithValue("@Email", model.Email);
+                cmd.Parameters.AddWithValue("@Password", model.Password);
+                cmd.Parameters.AddWithValue("@ConfirmPassword", model.ConfirmPassword);
+
+                cmd.Parameters.AddWithValue("@MobileNo", model.MobileNo);
+
+                cmd.Parameters.AddWithValue("@DOB", model.DOB);
+
+                cmd.Parameters.AddWithValue("@Gender", model.Gender);
+
+                cmd.Parameters.AddWithValue("@MaritalStatus", model.MaritalStatus);
+
+                cmd.Parameters.AddWithValue("@Address", model.Address);
+
+                cmd.Parameters.AddWithValue("@Hobbies",
+                    (object?)model.Hobbies ?? DBNull.Value);
+
+                cmd.Parameters.AddWithValue("@ProfileImage",
+                    (object?)model.ProfileImage ?? DBNull.Value);
+
+                SqlParameter returnParam =
+                    new SqlParameter("@ReturnValue", SqlDbType.Int);
+
+                returnParam.Direction = ParameterDirection.Output;
+
+                cmd.Parameters.Add(returnParam);
+
+                cmd.ExecuteNonQuery();
+
+                int result = Convert.ToInt32(returnParam.Value);
+
+                string message = result switch
                 {
-                    conn.Open();
-                    using (SqlCommand cmd = new SqlCommand("Create_New_User", conn))
-                    {
-                        cmd.CommandType = CommandType.StoredProcedure;
-                        cmd.Parameters.AddWithValue("@Username", username);
-                        cmd.Parameters.AddWithValue("@Email", email);
-                        cmd.Parameters.AddWithValue("@Password", password);
-                        cmd.Parameters.AddWithValue("@ConfirmPassword", confirmPassword);
+                    0 => "Account created successfully.",
+                    -1 => "Username already exists.",
+                    -2 => "Email already exists.",
+                    _ => "Unable to create account."
+                };
 
-                        SqlParameter returnParam = new SqlParameter("@ReturnValue", SqlDbType.Int)
-                        {
-                            Direction = ParameterDirection.Output
-                        };
-                        cmd.Parameters.Add(returnParam);
-
-                        cmd.ExecuteNonQuery();
-
-                        int returnValue = Convert.ToInt32(returnParam.Value);
-                        string message = returnValue switch
-                        {
-                            0 => "Account created successfully!",
-                            -1 => "Username already taken.",
-                            -2 => "Email already registered.",
-                            -3 => "Username must be at least 3 characters.",
-                            -4 => "Password must be at least 6 characters.",
-                            -5 => "Password and Confirm Password do not match.",
-                            -6 => "Please enter a valid email address.",
-                            _ => "An error occurred. Please try again."
-                        };
-
-                        return (returnValue, message);
-                    }
-                }
+                return (result, message);
             }
             catch (Exception ex)
             {
-                return (-7, "Error: " + ex.Message);
+                return (-99, ex.Message);
             }
         }
+        // ================= GET USERS FOR DROPDOWN =================
 
-        // ========== GET USERS FOR DROPDOWN ==========
         public static List<object> GetUsersForDropdown(DatabaseHelper db)
         {
             List<object> users = new List<object>();
@@ -187,7 +207,8 @@ namespace InventoryManagement.Models
             return users;
         }
 
-        // ========== GET ALL USERS ==========
+        // ================= GET ALL USERS =================
+
         public static List<UserModel> GetAllUsers(DatabaseHelper db)
         {
             List<UserModel> users = new List<UserModel>();
@@ -201,82 +222,122 @@ namespace InventoryManagement.Models
                     UserId = Convert.ToInt32(row["UserId"]),
                     Username = row["Username"]?.ToString() ?? string.Empty,
                     Email = row["Email"]?.ToString() ?? string.Empty,
+
+                    MobileNo = row.Table.Columns.Contains("MobileNo")
+                        ? row["MobileNo"]?.ToString() ?? string.Empty
+                        : string.Empty,
+
+                    DOB = row.Table.Columns.Contains("DOB") &&
+                          row["DOB"] != DBNull.Value
+                        ? Convert.ToDateTime(row["DOB"])
+                        : null,
+
+                    Gender = row.Table.Columns.Contains("Gender")
+                        ? row["Gender"]?.ToString() ?? string.Empty
+                        : string.Empty,
+
+                    MaritalStatus = row.Table.Columns.Contains("MaritalStatus")
+                        ? row["MaritalStatus"]?.ToString() ?? string.Empty
+                        : string.Empty,
+
+                    Address = row.Table.Columns.Contains("Address")
+                        ? row["Address"]?.ToString() ?? string.Empty
+                        : string.Empty,
+
+                    Hobbies = row.Table.Columns.Contains("Hobbies")
+                        ? row["Hobbies"]?.ToString()
+                        : string.Empty,
+
+                    ProfileImage = row.Table.Columns.Contains("ProfileImage")
+                        ? row["ProfileImage"]?.ToString()
+                        : string.Empty,
+
                     Role = row["Role"]?.ToString() ?? "2",
-                    IsActive = Convert.ToBoolean(row["IsActive"]),
-                    CreatedDate = Convert.ToDateTime(row["CreatedDate"])
+
+                    IsActive = row.Table.Columns.Contains("IsActive")
+                        ? Convert.ToBoolean(row["IsActive"])
+                        : true,
+
+                    CreatedDate = row.Table.Columns.Contains("CreatedDate") &&
+                                  row["CreatedDate"] != DBNull.Value
+                        ? Convert.ToDateTime(row["CreatedDate"])
+                        : null
                 });
             }
 
             return users;
         }
 
-        // ========== UPDATE USER ROLE ==========
+        // ================= UPDATE USER ROLE =================
+
         public static (bool Success, string Message) UpdateUserRole(
-    int userId,
-    string newRole,
-    DatabaseHelper db,
-    string? currentUserId = null)
+            int userId,
+            string newRole,
+            DatabaseHelper db,
+            string? currentUserId = null)
         {
             try
             {
                 string connStr = db.GetConnection().ConnectionString;
 
-                using (SqlConnection conn = new SqlConnection(connStr))
+                using SqlConnection conn = new SqlConnection(connStr);
+
+                conn.Open();
+
+                using (SqlCommand checkCmd = new SqlCommand(
+                    "SELECT Role FROM Users WHERE UserId=@UserId", conn))
                 {
-                    conn.Open();
+                    checkCmd.Parameters.AddWithValue("@UserId", userId);
 
-                    // Check if user exists and get current role
-                    string checkSql = "SELECT Role FROM Users WHERE UserId = @UserId";
+                    object? result = checkCmd.ExecuteScalar();
 
-                    using (SqlCommand checkCmd = new SqlCommand(checkSql, conn))
+                    if (result == null)
                     {
-                        checkCmd.Parameters.AddWithValue("@UserId", userId);
-
-                        object? result = checkCmd.ExecuteScalar();
-
-                        if (result == null)
-                        {
-                            return (false, "User not found.");
-                        }
-
-                        string userRole = result.ToString()!;
-
-                        if (userRole == "1")
-                        {
-                            return (false, "❌ Cannot update Admin role. Admin cannot be modified.");
-                        }
+                        return (false, "User not found.");
                     }
 
-                    // Update role
-                    using (SqlCommand cmd = new SqlCommand("update_role", conn))
+                    if (result.ToString() == "1")
                     {
-                        cmd.CommandType = CommandType.StoredProcedure;
-                        cmd.Parameters.AddWithValue("@userid", userId);
-                        cmd.Parameters.AddWithValue("@role", newRole);
-
-                        cmd.ExecuteNonQuery();
-
-                        bool isCurrentUser = currentUserId != null &&
-                                             currentUserId == userId.ToString();
-
-                        return (true,
-                            "✅ Role updated successfully!" +
-                            (isCurrentUser ? " Your role has been changed." : ""));
+                        return (false,
+                            "Admin role cannot be modified.");
                     }
                 }
-            }
-            catch (SqlException ex)
-            {
-                return (false, "Database error: " + ex.Message);
+
+                using (SqlCommand cmd =
+                    new SqlCommand("update_role", conn))
+                {
+                    cmd.CommandType = CommandType.StoredProcedure;
+
+                    cmd.Parameters.AddWithValue("@userid", userId);
+
+                    cmd.Parameters.AddWithValue("@role", newRole);
+
+                    cmd.ExecuteNonQuery();
+                }
+
+                bool isCurrentUser =
+                    currentUserId != null &&
+                    currentUserId == userId.ToString();
+
+                return (
+                    true,
+                    isCurrentUser
+                        ? "Role updated successfully. Please login again."
+                        : "Role updated successfully."
+                );
             }
             catch (Exception ex)
             {
-                return (false, "Error: " + ex.Message);
+                return (false, ex.Message);
             }
         }
 
-        // ========== USER EXISTS ==========
-        public static bool UserExists(string username, string email, DatabaseHelper db)
+        // ================= USER EXISTS =================
+
+        public static bool UserExists(
+            string username,
+            string email,
+            DatabaseHelper db)
         {
             Hashtable parameters = new Hashtable
             {
@@ -284,10 +345,10 @@ namespace InventoryManagement.Models
                 { "@Email", email }
             };
 
-            object? result = db.ExecuteScalar("sp_UserExists", parameters);
-            int count = Convert.ToInt32(result ?? 0);
+            object? result =
+                db.ExecuteScalar("sp_UserExists", parameters);
 
-            return count > 0;
+            return Convert.ToInt32(result ?? 0) > 0;
         }
     }
 }
