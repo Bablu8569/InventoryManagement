@@ -24,8 +24,6 @@ namespace InventoryManagement.Models
 
         public int RunningStock { get; set; }
 
-
-
         public static List<StockTransactionModel> GetTransactionsByProductId(DatabaseHelper db, int productId)
         {
             List<StockTransactionModel> transactions = new List<StockTransactionModel>();

@@ -13,14 +13,11 @@ namespace InventoryManagement.Controllers
 {
     public class StockController : Controller
     {
-        private readonly IConfiguration _configuration;
+        
         private readonly IStockRepository _stockRepository;
 
-        public StockController(
-            IConfiguration configuration,
-            IStockRepository stockRepository)
+        public StockController(IStockRepository stockRepository)
         {
-            _configuration = configuration;
             _stockRepository = stockRepository;
         }
 
@@ -39,28 +36,7 @@ namespace InventoryManagement.Controllers
             return role == "1" || role == "3";
         }
 
-        // ================= TRANSACTION HISTORY =================
-
-        //public IActionResult Index(DateTime? fromDate, DateTime? toDate)
-        //{
-        //    try
-        //    {
-        //        if (!IsUserLoggedIn())
-        //            return RedirectToAction("Login", "Account");
-
-        //        var transactions = _stockRepository.GetStockTransactions(fromDate, toDate);
-
-        //        ViewBag.FromDate = fromDate?.ToString("yyyy-MM-dd");
-        //        ViewBag.ToDate = toDate?.ToString("yyyy-MM-dd");
-
-        //        return View(transactions);
-        //    }
-        //    catch (Exception ex)
-        //    {
-        //        TempData["Error"] = ex.Message;
-        //        return RedirectToAction("Index", "Dashboard");
-        //    }
-        //}
+        
         public IActionResult Index(DateTime? fromDate, DateTime? toDate, DateTime? date)
         {
             try
@@ -107,13 +83,12 @@ namespace InventoryManagement.Controllers
                 return RedirectToAction("Index", "Dashboard");
             }
 
-            ViewBag.Products = GetProductList();
+            ViewBag.Products = _stockRepository.GetProductList();
 
             return View();
         }
 
         // ================= CREATE POST =================
-
         [HttpPost]
         [ValidateAntiForgeryToken]
         public IActionResult Create(StockEntryModel model)
@@ -129,143 +104,66 @@ namespace InventoryManagement.Controllers
                     return RedirectToAction("Index", "Dashboard");
                 }
 
-                // Product Validation
                 if (model.ProductId <= 0)
-                {
                     ModelState.AddModelError("ProductId", "Please select a product.");
-                }
 
-                // Quantity Validation
                 if (model.Quantity < 1 || model.Quantity > 1000)
-                {
-                    ModelState.AddModelError("Quantity",
-                        "Quantity must be between 1 and 1000.");
-                }
+                    ModelState.AddModelError("Quantity", "Quantity must be between 1 and 1000.");
 
-                // Transaction Type Validation
                 if (string.IsNullOrWhiteSpace(model.TransactionType))
-                {
-                    ModelState.AddModelError("TransactionType",
-                        "Please select transaction type.");
-                }
+                    ModelState.AddModelError("TransactionType", "Please select transaction type.");
 
-                // Remarks Optional
-                if (!string.IsNullOrWhiteSpace(model.Remarks) &&
-                    model.Remarks.Length > 500)
-                {
-                    ModelState.AddModelError("Remarks",
-                        "Remarks cannot exceed 500 characters.");
-                }
+                if (!string.IsNullOrWhiteSpace(model.Remarks) && model.Remarks.Length > 500)
+                    ModelState.AddModelError("Remarks", "Remarks cannot exceed 500 characters.");
 
                 if (!ModelState.IsValid)
                 {
-                    ViewBag.Products = GetProductList();
+                    ViewBag.Products = _stockRepository.GetProductList();
                     return View(model);
                 }
 
-                string connStr = _configuration.GetConnectionString("DefaultConnection");
-
-                using (SqlConnection conn = new SqlConnection(connStr))
+                if (model.TransactionType.Equals("Out", StringComparison.OrdinalIgnoreCase))
                 {
-                    conn.Open();
+                    int currentStock = _stockRepository.GetCurrentStock(model.ProductId);
 
-                    // Stock Check for OUT
-
-                    if (string.Equals(model.TransactionType, "Out",
-                        StringComparison.OrdinalIgnoreCase))
+                    if (currentStock < model.Quantity)
                     {
-                        using (SqlCommand cmd = new SqlCommand("USP_CheckStock", conn))
-                        {
-                            cmd.CommandType = CommandType.StoredProcedure;
-                            cmd.Parameters.AddWithValue("@ProductId", model.ProductId);
+                        ModelState.AddModelError("", $"Insufficient Stock. Available : {currentStock}");
 
-                            int currentStock = Convert.ToInt32(cmd.ExecuteScalar());
-
-                            if (currentStock < model.Quantity)
-                            {
-                                ModelState.AddModelError("",
-                                    $"Insufficient Stock. Available : {currentStock}");
-
-                                ViewBag.Products = GetProductList();
-                                return View(model);
-                            }
-                        }
-                    }
-
-                    // Insert Transaction
-                    using (SqlCommand cmd = new SqlCommand("USP_InsertStockTransaction", conn))
-                    {
-                        cmd.CommandType = CommandType.StoredProcedure;
-
-                        cmd.Parameters.AddWithValue("@ProductId", model.ProductId);
-                        cmd.Parameters.AddWithValue("@Quantity", model.Quantity);
-                        cmd.Parameters.AddWithValue("@TransactionType", model.TransactionType);
-                        cmd.Parameters.AddWithValue("@TransactionDate", DateTime.Now);
-
-                        cmd.Parameters.AddWithValue("@Remarks",
-                            string.IsNullOrWhiteSpace(model.Remarks)
-                            ? DBNull.Value
-                            : (object)model.Remarks);
-
-                        cmd.ExecuteNonQuery();
+                        ViewBag.Products = _stockRepository.GetProductList();
+                        return View(model);
                     }
                 }
 
-                TempData["Success"] = "Transaction Saved Successfully.";
+                var result = _stockRepository.InsertStockTransaction(new StockTransactionModel
+                {
+                    ProductId = model.ProductId,
+                    Quantity = model.Quantity,
+                    TransactionType = model.TransactionType,
+                    Remarks = model.Remarks,
+                    TransactionDate = DateTime.Now
+                });
+
+                if (!result.Success)
+                {
+                    ModelState.AddModelError("", result.Message);
+
+                    ViewBag.Products = _stockRepository.GetProductList();
+                    return View(model);
+                }
+
+                TempData["Success"] = result.Message;
 
                 return RedirectToAction(nameof(Index));
-            }
-            catch (SqlException ex)
-            {
-                ModelState.AddModelError("", ex.Message);
             }
             catch (Exception ex)
             {
                 ModelState.AddModelError("", ex.Message);
+
+                ViewBag.Products = _stockRepository.GetProductList();
+
+                return View(model);
             }
-
-            ViewBag.Products = GetProductList();
-            return View(model);
-        }
-        // ================= GET PRODUCT LIST =================
-
-        private List<ProductModel> GetProductList()
-        {
-            var products = new List<ProductModel>();
-
-            try
-            {
-                string connStr = _configuration.GetConnectionString("DefaultConnection");
-
-                using (SqlConnection conn = new SqlConnection(connStr))
-                {
-                    conn.Open();
-
-                    using (SqlCommand cmd = new SqlCommand("USP_GetProductsForStock", conn))
-                    {
-                        cmd.CommandType = CommandType.StoredProcedure;
-
-                        using (SqlDataReader reader = cmd.ExecuteReader())
-                        {
-                            while (reader.Read())
-                            {
-                                products.Add(new ProductModel
-                                {
-                                    ProductId = Convert.ToInt32(reader["ProductId"]),
-                                    ProductName = reader["ProductName"]?.ToString() ?? "",
-                                    Quantity = Convert.ToInt32(reader["Quantity"])
-                                });
-                            }
-                        }
-                    }
-                }
-            }
-            catch (Exception)
-            {
-                // Optional: Log Error
-            }
-
-            return products;
         }
 
         // ================= EXPORT CSV =================
