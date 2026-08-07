@@ -5,11 +5,12 @@
 <style>
     /* Page level scroll - only one scroll bar */
     html, body {
-        overflow-y: auto !important;
-        overflow-x: hidden !important;
+        /* overflow-y: auto !important;
+        overflow-x: hidden !important; */
         height: 100%;
         margin: 0;
         padding: 0;
+        overflow:hidden;
     }
 
     /* Main content - scroll with page */
@@ -28,18 +29,18 @@
     }
 
     /* Product grid wrapper - takes full available height */
-    .product-grid-wrapper {
-        height: 500px;
-        width: 100%;
+    /* .product-grid-wrapper {
+        /* height: 500px; */
+        /* width: 100%;
         overflow: hidden !important;
-        position: relative;
-    }
+        position: relative; */
+    } */
 
     /* AG Grid - scroll inside grid only */
-    #productGrid {
+    /* #productGrid {
         height: 100%;
         width: 100%;
-    }
+    } */
 
     /* AG Grid - scroll bars inside grid */
     .ag-theme-alpine .ag-body-viewport {
@@ -194,8 +195,9 @@
     }
 
     <!-- Grid Wrapper -->
-    <div class="product-grid-wrapper">
-        <div id="productGrid" class="ag-theme-alpine"></div>
+    <div id="productGrid"
+         class="ag-theme-alpine"
+         style="height:calc(100vh - 200px); width:100%;">
     </div>
 
     <!-- Small footer space for scroll -->

@@ -1,4 +1,8 @@
-﻿* {
+﻿/* ===========================
+   BODY
+=========================== */
+
+* {
     margin: 0;
     padding: 0;
     box-sizing: border-box;
@@ -6,194 +10,162 @@
 }
 
 body {
-    background: linear-gradient(135deg, #4facfe, #00c6fb);
     min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: linear-gradient(135deg,#4facfe,#00c6fb);
     padding: 20px;
 }
 
+/* ===========================
+   CONTAINER
+=========================== */
+
 .signup-container {
     width: 100%;
-    max-width: 1200px;
-    margin: auto;
+    max-width: 900px;
 }
+
+/* ===========================
+   CARD
+=========================== */
 
 .signup-card {
     background: #fff;
-    border-radius: 15px;
-    padding: 35px;
+    border-radius: 12px;
+    padding: 25px;
     box-shadow: 0 10px 30px rgba(0,0,0,.15);
 }
 
     .signup-card h2 {
         text-align: center;
-        font-size: 40px;
-        font-weight: 700;
-        margin-bottom: 30px;
-        color: #222;
+        margin-bottom: 20px;
+        color: #333;
     }
 
-/* =========================
-        TWO COLUMN
-==========================*/
+/* ===========================
+   ROW
+=========================== */
 
 .form-row {
     display: flex;
-    gap: 30px;
-    margin-bottom: 20px;
+    gap: 20px;
+    margin-bottom: 10px;
 }
 
 .form-column {
     flex: 1;
 }
 
-/* =========================
-        FORM GROUP
-==========================*/
+/* ===========================
+   FORM
+=========================== */
 
 .form-group {
-    margin-bottom: 18px;
+    display: flex;
+    flex-direction: column;
+    margin-bottom: 14px;
 }
 
     .form-group label {
-        display: block;
-        font-size: 15px;
+        font-size: 14px;
         font-weight: 600;
+        margin-bottom: 6px;
         color: #333;
-        margin-bottom: 7px;
     }
 
     .form-group input,
     .form-group select,
     .form-group textarea {
         width: 100%;
-        border: 1px solid #ddd;
-        border-radius: 8px;
-        padding: 10px 15px;
-        font-size: 15px;
+        padding: 10px 12px;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        outline: none;
+        font-size: 14px;
         transition: .3s;
-    }
-
-    .form-group input,
-    .form-group select {
-        height: 45px;
-    }
-
-    .form-group textarea {
-        height: 110px;
-        resize: none;
     }
 
         .form-group input:focus,
         .form-group select:focus,
         .form-group textarea:focus {
-            outline: none;
             border-color: #0d6efd;
-            box-shadow: 0 0 8px rgba(13,110,253,.20);
+            box-shadow: 0 0 4px rgba(13,110,253,.3);
         }
 
-/* File Upload */
+    .form-group textarea {
+        resize: none;
+        height: 80px;
+    }
+
+/* ===========================
+   GENDER
+=========================== */
+
+.gender-group,
+.hobby-group {
+    display: flex;
+    gap: 18px;
+    flex-wrap: wrap;
+    margin-top: 4px;
+}
+
+    .gender-group label,
+    .hobby-group label {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        font-size: 14px;
+        font-weight: 500;
+    }
+
+/* ===========================
+   FILE INPUT
+=========================== */
 
 input[type=file] {
     padding: 8px;
 }
 
-/* =========================
-        RADIO BUTTON
-==========================*/
-
-.gender-group {
-    display: flex;
-    gap: 25px;
-    align-items: center;
-    margin-top: 8px;
-}
-
-    .gender-group label {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        cursor: pointer;
-        font-weight: 500;
-    }
-
-    .gender-group input {
-        width: auto;
-        height: auto;
-    }
-
-/* =========================
-        CHECKBOX
-==========================*/
-
-.hobby-group {
-    display: flex;
-    gap: 20px;
-    flex-wrap: wrap;
-    margin-top: 8px;
-}
-
-    .hobby-group label {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        cursor: pointer;
-        font-weight: 500;
-    }
-
-    .hobby-group input {
-        width: auto;
-        height: auto;
-    }
-
-/* =========================
-        BUTTONS
-==========================*/
+/* ===========================
+   BUTTONS
+=========================== */
 
 .button-group {
     display: flex;
-    justify-content: flex-end;
-    gap: 12px;
+    justify-content: center;
+    gap: 15px;
     margin-top: 20px;
 }
 
-.btn-reset {
-    background: #6c757d;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    padding: 10px 22px;
-    cursor: pointer;
-    font-size: 15px;
-    transition: .3s;
-}
-
-    .btn-reset:hover {
-        background: #5a6268;
-    }
-
+.btn-reset,
 .btn-signup {
-    background: #0d6efd;
-    color: #fff;
+    width: 180px; /* Same Width */
+    height: 45px; /* Same Height */
     border: none;
     border-radius: 8px;
-    padding: 10px 22px;
-    cursor: pointer;
+    background: #0d6efd; /* Same Blue Color */
+    color: #fff;
     font-size: 15px;
-    transition: .3s;
+    font-weight: 600;
+    cursor: pointer;
+    transition: 0.3s ease;
 }
 
+    .btn-reset:hover,
     .btn-signup:hover {
         background: #0b5ed7;
+        transform: translateY(-2px);
     }
-
-/* =========================
-        LOGIN LINK
-==========================*/
+/* ===========================
+   LOGIN
+=========================== */
 
 .login-link {
     text-align: center;
-    margin-top: 30px;
-    font-size: 15px;
+    margin-top: 18px;
+    font-size: 14px;
 }
 
     .login-link a {
@@ -206,89 +178,35 @@ input[type=file] {
             text-decoration: underline;
         }
 
-/* =========================
-        VALIDATION
-==========================*/
+/* ===========================
+   VALIDATION
+=========================== */
+
+.field-validation-error {
+    color: red;
+    font-size: 12px;
+    margin-top: 4px;
+}
 
 .validation-summary-errors {
     color: red;
     margin-bottom: 15px;
 }
 
-.field-validation-error {
-    color: red;
-    font-size: 13px;
-}
-
-.input-validation-error {
-    border-color: red !important;
-}
-
-/* =========================
-        ANIMATION
-==========================*/
-
-.signup-card {
-    animation: fadeIn .5s ease;
-}
-
-@keyframes fadeIn {
-
-    from {
-        opacity: 0;
-        transform: translateY(25px);
-    }
-
-    to {
-        opacity: 1;
-        transform: translateY(0);
-    }
-}
-
-/* =========================
-        RESPONSIVE
-==========================*/
-
-@media(max-width:992px) {
-
-    .signup-container {
-        max-width: 900px;
-    }
-}
+/* ===========================
+   MOBILE
+=========================== */
 
 @media(max-width:768px) {
+
+    .signup-card {
+        padding: 20px;
+    }
 
     .form-row {
         flex-direction: column;
         gap: 0;
     }
-
-    .signup-card {
-        padding: 25px;
-    }
-
-        .signup-card h2 {
-            font-size: 30px;
-        }
-
-    .button-group {
-        justify-content: center;
-    }
-}
-
-@media(max-width:576px) {
-
-    body {
-        padding: 10px;
-    }
-
-    .signup-card {
-        padding: 18px;
-    }
-
-        .signup-card h2 {
-            font-size: 25px;
-        }
 
     .button-group {
         flex-direction: column;

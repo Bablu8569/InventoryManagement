@@ -10,6 +10,11 @@ namespace InventoryManagement.Models
         public int CategoryId { get; set; }
 
         [Required(ErrorMessage = "Category name is required")]
+        [StringLength(100, MinimumLength = 2,
+            ErrorMessage = "Category name must be between 2 and 100 characters.")]
+        [RegularExpression(
+            @"^(?=.*[A-Za-z0-9])[A-Za-z0-9\s&()\-]+$",
+            ErrorMessage = "Please enter a valid category name.")]
         public string CategoryName { get; set; } = string.Empty;
 
         public bool IsActive { get; set; } = true;
@@ -18,14 +23,9 @@ namespace InventoryManagement.Models
 
         public string Description { get; set; } = string.Empty;
 
-
-
         // ================= GET ALL =================
 
-        public static List<CategoryModel> GetAll(
-            DatabaseHelper db,
-            string? search = null
-        )
+        public static List<CategoryModel> GetAll(DatabaseHelper db, string? search = null)
         {
             List<CategoryModel> list = new();
 
@@ -33,72 +33,39 @@ namespace InventoryManagement.Models
 
             if (string.IsNullOrEmpty(search))
             {
-                dt = db.ExecuteStoredProcedure(
-                    "sp_GetAllCategories"
-                );
+                dt = db.ExecuteStoredProcedure("sp_GetAllCategories");
             }
             else
             {
                 Hashtable ht = new();
-
                 ht.Add("@Search", search);
 
-                dt = db.ExecuteStoredProcedure(
-                    "sp_GetCategoriesBySearch",
-                    ht
-                );
+                dt = db.ExecuteStoredProcedure("sp_GetCategoriesBySearch", ht);
             }
 
             foreach (DataRow row in dt.Rows)
             {
                 list.Add(new CategoryModel
                 {
-                    CategoryId = Convert.ToInt32(row["CategoryId"]  ),
-
-                    CategoryName =
-                        row["CategoryName"]
-                        .ToString() ?? "",
-
-                    Description =
-                        row["Description"]
-                        .ToString() ?? "",
-
-                    IsActive =
-                        Convert.ToBoolean(
-                            row["IsActive"]
-                        ),
-
-                    CreatedDate =
-                        Convert.ToDateTime(
-                            row["CreatedDate"]
-                        )
+                    CategoryId = Convert.ToInt32(row["CategoryId"]),
+                    CategoryName = row["CategoryName"].ToString() ?? "",
+                    Description = row["Description"].ToString() ?? "",
+                    IsActive = Convert.ToBoolean(row["IsActive"]),
+                    CreatedDate = Convert.ToDateTime(row["CreatedDate"])
                 });
             }
 
             return list;
         }
 
-
-
         // ================= GET BY ID =================
 
-        public static CategoryModel? GetById(
-            DatabaseHelper db,
-            int id
-        )
+        public static CategoryModel? GetById(DatabaseHelper db, int id)
         {
             Hashtable ht = new();
+            ht.Add("@CategoryId", id);
 
-            ht.Add(
-                "@CategoryId",
-                id
-            );
-
-            DataTable dt =
-                db.ExecuteStoredProcedure(
-                    "USP_GetCategoryById",
-                    ht
-                );
+            DataTable dt = db.ExecuteStoredProcedure("USP_GetCategoryById", ht);
 
             if (dt.Rows.Count == 0)
                 return null;
@@ -107,125 +74,55 @@ namespace InventoryManagement.Models
 
             return new CategoryModel
             {
-                CategoryId =
-                    Convert.ToInt32(
-                        row["CategoryId"]
-                    ),
-
-                CategoryName =
-                    row["CategoryName"]
-                    .ToString() ?? "",
-
-                Description =
-                    row["Description"]
-                    .ToString() ?? "",
-
-                IsActive =
-                    Convert.ToBoolean(
-                        row["IsActive"]
-                    ),
-
-                CreatedDate =
-                    Convert.ToDateTime(
-                        row["CreatedDate"]
-                    )
+                CategoryId = Convert.ToInt32(row["CategoryId"]),
+                CategoryName = row["CategoryName"].ToString() ?? "",
+                Description = row["Description"].ToString() ?? "",
+                IsActive = Convert.ToBoolean(row["IsActive"]),
+                CreatedDate = Convert.ToDateTime(row["CreatedDate"])
             };
         }
 
-
-
         // ================= INSERT =================
 
-        public string Insert(
-            DatabaseHelper db
-        )
+        public string Insert(DatabaseHelper db)
         {
             Hashtable ht = new();
 
-            ht.Add(
-                "@CategoryName",
-                CategoryName
-            );
+            ht.Add("@CategoryName", CategoryName.Trim());
+            ht.Add("@Description", Description);
+            ht.Add("@IsActive", IsActive);
 
-            ht.Add(
-                "@Description",
-                Description
-            );
+            DataTable dt = db.ExecuteStoredProcedure("sp_InsertCategory", ht);
 
-            DataTable dt =
-                db.ExecuteStoredProcedure(
-                    "sp_InsertCategory",
-                    ht
-                );
-
-            return dt.Rows[0]["Message"]
-                .ToString() ?? "";
+            return dt.Rows[0]["Message"].ToString() ?? "";
         }
-
-
 
         // ================= UPDATE =================
 
-        public string Update(
-            DatabaseHelper db
-        )
+        public string Update(DatabaseHelper db)
         {
             Hashtable ht = new();
 
-            ht.Add(
-                "@CategoryId",
-                CategoryId
-            );
+            ht.Add("@CategoryId", CategoryId);
+            ht.Add("@CategoryName", CategoryName.Trim());
+            ht.Add("@Description", Description);
+            ht.Add("@IsActive", IsActive);
 
-            ht.Add(
-                "@CategoryName",
-                CategoryName
-            );
+            DataTable dt = db.ExecuteStoredProcedure("sp_UpdateCategory", ht);
 
-            ht.Add(
-                "@Description",
-                Description
-            );
-
-            ht.Add(
-                "@IsActive",
-                IsActive
-            );
-
-            DataTable dt =
-                db.ExecuteStoredProcedure(
-                    "sp_UpdateCategory",
-                    ht
-                );
-
-            return dt.Rows[0]["Message"]
-                .ToString() ?? "";
+            return dt.Rows[0]["Message"].ToString() ?? "";
         }
-
-
 
         // ================= DELETE =================
 
-        public static string Delete(
-            DatabaseHelper db,
-            int id
-        )
+        public static string Delete(DatabaseHelper db, int id)
         {
             Hashtable ht = new();
+            ht.Add("@CategoryId", id);
 
-            ht.Add(
-                "@CategoryId",
-                id
-            );
+            DataTable dt = db.ExecuteStoredProcedure("USP_DeleteCategory", ht);
 
-            DataTable dt =
-                db.ExecuteStoredProcedure(
-                    "USP_DeleteCategory",
-                    ht
-                );
-
-            return dt.Rows[0]["Message"]
-                .ToString() ?? "";
+            return dt.Rows[0]["Message"].ToString() ?? "";
         }
     }
 }

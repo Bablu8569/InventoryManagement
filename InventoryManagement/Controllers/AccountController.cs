@@ -236,7 +236,7 @@ namespace InventoryManagement.Controllers
                     });
                 }
 
-                var users = UserModel.GetAllUsers(_db);
+                var users = UserModel.GetUsersForDropdown(_db);
 
                 return Json(new
                 {

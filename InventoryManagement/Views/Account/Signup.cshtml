@@ -1,200 +1,270 @@
 ﻿@model InventoryManagement.Models.UserModel
+
 @{
     Layout = null;
 }
 
-<!DOCTYPE html>
+<link rel="stylesheet" href="~/css/signup.css" />
 
-<html>
+<div class="signup-container">
 
-<head>
+    <div class="signup-card">
 
-    <meta charset="utf-8" />
+        <h2>Create Account</h2>
 
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+        <form asp-action="Signup"
+              method="post"
+              enctype="multipart/form-data"
+              id="signupForm">
 
-    <title>Create Account</title>
+            @Html.AntiForgeryToken()
 
-    <link rel="stylesheet" href="~/css/signup.css">
+            <div asp-validation-summary="ModelOnly"
+                 class="validation-summary-errors"></div>
 
-</head>
+            <div class="form-row">
 
-<body>
+                <!-- LEFT COLUMN -->
 
-    <div class="signup-container">
+                <div class="form-column">
 
-        <div class="signup-card">
+                    <div class="form-group">
+                        <label>Name</label>
+                        <input asp-for="Username"
+                               placeholder="Full Name" />
 
-            <h2>Create Account</h2>
+                        <span asp-validation-for="Username"></span>
+                    </div>
 
-            <form asp-action="Signup" method="post" enctype="multipart/form-data">
+                    <div class="form-group">
+                        <label>Password</label>
 
-                <div asp-validation-summary="ModelOnly" class="validation-summary-errors"></div>
+                        <input asp-for="Password"
+                               type="password"
+                               placeholder="Password" />
 
-                <div class="form-row">
+                        <span asp-validation-for="Password"></span>
+                    </div>
 
-                    <!-- LEFT -->
+                    <div class="form-group">
 
-                    <div class="form-column">
+                        <label>Profile Image</label>
 
-                        <div class="form-group">
-                            <label>Name</label>
-                            <input asp-for="Username" placeholder="Full Name" />
-                            <span asp-validation-for="Username"></span>
-                        </div>
+                        <input asp-for="ProfileImageFile"
+                               type="file" />
 
-                        <div class="form-group">
-                            <label>Password</label>
-                            <input asp-for="Password" type="password" placeholder="Password" />
-                            <span asp-validation-for="Password"></span>
-                        </div>
-
-                        <div class="form-group">
-                            <label>Profile Image</label>
-                            <input asp-for="ProfileImageFile" type="file" />
-<span asp-validation-for="ProfileImageFile" class="text-danger"></span>
-                        </div>
-
-                        <div class="form-group">
-                            <label>Mobile No</label>
-                            <input asp-for="MobileNo" placeholder="Mobile Number" />
-                        </div>
-
-                        <div class="form-group">
-                            <label>Marital Status</label>
-
-                            <select asp-for="MaritalStatus">
-
-                                <option value="">-- Select Status --</option>
-
-                                <option>Single</option>
-
-                                <option>Married</option>
-
-                            </select>
-
-                        </div>
+                        <span asp-validation-for="ProfileImageFile"></span>
 
                     </div>
 
-                    <!-- RIGHT -->
+                    <div class="form-group">
 
-                    <div class="form-column">
+                        <label>Mobile Number</label>
 
-                        <div class="form-group">
-                            <label>Email</label>
-                            <input asp-for="Email" placeholder="Email Address" />
-                            <span asp-validation-for="Email"></span>
+                        <input asp-for="MobileNo"
+                               placeholder="Mobile Number" />
+
+                        <span asp-validation-for="MobileNo"></span>
+
+                    </div>
+
+                    <div class="form-group">
+
+                        <label>Marital Status</label>
+
+                        <select asp-for="MaritalStatus">
+
+                            <option value="">-- Select Status --</option>
+                            <option>Single</option>
+                            <option>Married</option>
+
+                        </select>
+
+                        <span asp-validation-for="MaritalStatus"></span>
+
+                    </div>
+
+                </div>
+
+                <!-- RIGHT COLUMN -->
+
+                <div class="form-column">
+                    <div class="form-group">
+
+                        <label>Email</label>
+
+                        <input asp-for="Email"
+                               placeholder="Email Address" />
+
+                        <span asp-validation-for="Email"></span>
+
+                    </div>
+
+                    <div class="form-group">
+
+                        <label>Confirm Password</label>
+
+                        <input asp-for="ConfirmPassword"
+                               type="password"
+                               placeholder="Confirm Password" />
+
+                        <span asp-validation-for="ConfirmPassword"></span>
+
+                    </div>
+
+                    <div class="form-group">
+
+                        <label>Date of Birth</label>
+
+                        <input asp-for="DOB" type="date" />
+
+                        <span asp-validation-for="DOB"></span>
+
+                    </div>
+
+                    <div class="form-group">
+
+                        <label>Gender</label>
+
+                        <div class="gender-group">
+
+                            <label>
+                                <input asp-for="Gender"
+                                       type="radio"
+                                       value="Male" />
+                                Male
+                            </label>
+
+                            <label>
+                                <input asp-for="Gender"
+                                       type="radio"
+                                       value="Female" />
+                                Female
+                            </label>
+
                         </div>
 
-                        <div class="form-group">
-                            <label>Confirm Password</label>
-                            <input asp-for="ConfirmPassword" type="password" placeholder="Confirm Password" />
-                            <span asp-validation-for="ConfirmPassword"></span>
-                        </div>
+                        <span asp-validation-for="Gender"></span>
 
-                        <div class="form-group">
-                            <label>DOB</label>
-                            <input asp-for="DOB" type="date" />
-                        </div>
+                    </div>
 
-                        <div class="form-group">
+                    <div class="form-group">
 
-                            <label>Gender</label>
-
-                            <div class="gender-group">
-
-                                <label>
-
-                                    <input type="radio"
-                                           asp-for="Gender"
-                                           value="Male">
-
-                                    Male
-
-                                </label>
-
-                                <label>
-
-                                    <input type="radio"
-                                           asp-for="Gender"
-                                           value="Female">
-
-                                    Female
-
-                                </label>
-
-                            </div>
-
-                        </div>
-
-                      <div class="form-group">
                         <label>Hobbies</label>
 
                         <div class="hobby-group">
+
                             <label>
-                                <input type="checkbox" name="SelectedHobbies" value="Reading" />
+                                <input type="checkbox"
+                                       name="SelectedHobbies"
+                                       value="Reading" />
                                 Reading
                             </label>
 
                             <label>
-                                <input type="checkbox" name="SelectedHobbies" value="Sports" />
+                                <input type="checkbox"
+                                       name="SelectedHobbies"
+                                       value="Sports" />
                                 Sports
                             </label>
 
                             <label>
-                                <input type="checkbox" name="SelectedHobbies" value="Music" />
+                                <input type="checkbox"
+                                       name="SelectedHobbies"
+                                       value="Music" />
                                 Music
                             </label>
+
                         </div>
+
                     </div>
 
-                <div class="form-group">
-
-                    <label>Address</label>
-
-                    <textarea asp-for="Address"
-                              placeholder="Enter Address"></textarea>
-
                 </div>
-
-                <div class="button-group">
-
-                    <button type="reset" class="btn-reset">
-
-                        Reset
-
-                    </button>
-
-                    <button type="submit" class="btn-signup">
-
-                        Create Account
-
-                    </button>
-
-                </div>
-
-            </form>
-
-            <div class="login-link">
-
-                Already have an account?
-
-                <a asp-controller="Account"
-                   asp-action="Login">
-
-                    Login
-
-                </a>
 
             </div>
+
+            <!-- ADDRESS -->
+
+            <div class="form-group">
+
+                <label>Address</label>
+
+                <textarea asp-for="Address"
+                          placeholder="Enter Address"></textarea>
+
+                <span asp-validation-for="Address"></span>
+
+            </div>
+
+            <!-- BUTTONS -->
+
+            <div class="button-group">
+
+                <button type="button"
+                        id="btnReset"
+                        class="btn-reset">
+                    Reset
+                </button>
+
+                <button type="submit"
+                        class="btn-signup">
+                    Create Account
+                </button>
+
+            </div>
+
+        </form>
+
+        <div class="login-link">
+
+            Already have an account?
+
+            <a asp-controller="Account"
+               asp-action="Login">
+                Login
+            </a>
 
         </div>
 
     </div>
 
-</body>
+</div>
 
-</html>
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+<script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+<script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
 
-        
+<script>
+    $(document).ready(function() {
+
+        $("#btnReset").click(function() {
+
+            // Reset form fields
+            $("#signupForm")[0].reset();
+
+            // Clear validation messages
+            $("span.field-validation-error")
+                .removeClass("field-validation-error")
+                .addClass("field-validation-valid")
+                .html("");
+
+            $(".validation-summary-errors")
+                .removeClass("validation-summary-errors")
+                .addClass("validation-summary-valid")
+                .html("");
+
+            // Remove validation styles
+            $(".input-validation-error")
+                .removeClass("input-validation-error");
+
+            // Reset jQuery unobtrusive validation
+            var form = $("#signupForm");
+
+            form.removeData("validator");
+            form.removeData("unobtrusiveValidation");
+
+            $.validator.unobtrusive.parse(form);
+        });
+
+    });
+</script>

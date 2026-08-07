@@ -13,6 +13,16 @@
         justify-content: center;
         align-items: center;
     }
+
+    .text-danger {
+        color: red;
+        font-size: 15px;
+    }
+
+    .field-validation-error {
+        color: red;
+        font-size: 14px;
+    }
 </style>
 
 <h2>Add Category</h2>
@@ -24,25 +34,37 @@
     </div>
 }
 
-<div asp-validation-summary="ModelOnly" class="alert alert-danger"></div>
+@if (!ViewData.ModelState.IsValid)
+{
+    @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+    {
+        <div class="text-danger" style="margin-bottom:10px;">
+            @error.ErrorMessage
+        </div>
+    }
+}
 
 <form method="post">
+
     <div class="form-group">
         <label asp-for="CategoryName"></label>
-        <input asp-for="CategoryName" />
-        <span asp-validation-for="CategoryName"></span>
+        <input asp-for="CategoryName" class="form-control" />
+        <span asp-validation-for="CategoryName" class="text-danger"></span>
     </div>
+
+    <br />
 
     <div class="form-group" style="display:flex; align-items:center; gap:10px;">
         <label asp-for="IsActive" style="margin-bottom:0;"></label>
         <input asp-for="IsActive" type="checkbox" style="width:auto; margin:0;" />
-        <span asp-validation-for="IsActive"></span>
+        <span asp-validation-for="IsActive" class="text-danger"></span>
     </div>
 
     <div style="margin-top:15px;">
         <button type="submit" class="btn btn-success action-btn">Save</button>
         <a href="@Url.Action("Index")" class="btn btn-primary action-btn">Cancel</a>
     </div>
+
 </form>
 
 @section Scripts {

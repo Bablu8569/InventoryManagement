@@ -29,37 +29,40 @@ namespace InventoryManagement.Models
         [Required(ErrorMessage = "Password is required.")]
         [RegularExpression(
             @"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$",
-            ErrorMessage = "Password must contain uppercase, lowercase, number and special character.")]
+            ErrorMessage = "Password must contain at least 8 characters, including uppercase, lowercase, number and special character.")]
         public string Password { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Confirm Password is required.")]
         [Compare("Password", ErrorMessage = "Passwords do not match.")]
         public string ConfirmPassword { get; set; } = string.Empty;
 
-        // ================= NEW SIGNUP FIELDS =================
+        // ================= PERSONAL DETAILS =================
 
-        [Required]
+        [Required(ErrorMessage = "Mobile number is required.")]
         [RegularExpression(@"^[6-9]\d{9}$",
-            ErrorMessage = "Enter valid mobile number.")]
+            ErrorMessage = "Enter a valid 10-digit mobile number.")]
         public string MobileNo { get; set; } = string.Empty;
 
-        [Required]
+        [Required(ErrorMessage = "Date of Birth is required.")]
         public DateTime? DOB { get; set; }
 
-        [Required]
+        [Required(ErrorMessage = "Gender is required.")]
         public string Gender { get; set; } = string.Empty;
 
-        [Required]
+        [Required(ErrorMessage = "Marital Status is required.")]
         public string MaritalStatus { get; set; } = string.Empty;
 
-        [Required]
+        [Required(ErrorMessage = "Address is required.")]
+        [StringLength(250, ErrorMessage = "Address cannot exceed 250 characters.")]
         public string Address { get; set; } = string.Empty;
 
         public string? Hobbies { get; set; }
+
         [NotMapped]
         public List<string> SelectedHobbies { get; set; } = new();
 
         public string? ProfileImage { get; set; }
+
         [NotMapped]
         public IFormFile? ProfileImageFile { get; set; }
 
@@ -69,8 +72,7 @@ namespace InventoryManagement.Models
 
         public bool IsActive { get; set; } = true;
 
-        public DateTime? CreatedDate { get; set; }
-
+        public DateTime? CreatedDate { get; set; } = DateTime.Now;
         // ================= LOGIN =================
 
         public static (UserModel? User, string Message) ValidateUser(
@@ -213,8 +215,7 @@ namespace InventoryManagement.Models
         {
             List<UserModel> users = new List<UserModel>();
 
-            DataTable dt = db.ExecuteStoredProcedure("sp_GetAllUsersForAccess");
-
+            DataTable dt = db.ExecuteStoredProcedure("sp_GetUsersForDropdown");
             foreach (DataRow row in dt.Rows)
             {
                 users.Add(new UserModel
