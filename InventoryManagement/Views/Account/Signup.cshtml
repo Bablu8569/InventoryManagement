@@ -116,9 +116,14 @@
 
                         <label>Date of Birth</label>
 
-                        <input asp-for="DOB" type="date" />
+                        <input asp-for="DOB"
+                               type="date"
+                               id="DOB"
+                               max="@DateTime.Today.AddYears(-18).ToString("yyyy-MM-dd")" />
 
                         <span asp-validation-for="DOB"></span>
+
+                        
 
                     </div>
 
@@ -265,6 +270,32 @@
 
             $.validator.unobtrusive.parse(form);
         });
+
+    });
+        $("#DOB").change(function () {
+
+        var dob = new Date($(this).val());
+
+        var today = new Date();
+
+        var age = today.getFullYear() - dob.getFullYear();
+
+        var month = today.getMonth() - dob.getMonth();
+
+        if (month < 0 || (month === 0 && today.getDate() < dob.getDate()))
+            age--;
+
+        if (age < 18)
+        {
+            $('[data-valmsg-for="DOB"]')
+                .text("Age must be at least 18 years.");
+
+            $(this).val("");
+
+            return false;
+        }
+
+        $('[data-valmsg-for="DOB"]').text("");
 
     });
 </script>

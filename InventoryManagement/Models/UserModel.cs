@@ -7,7 +7,7 @@ using System.ComponentModel.DataAnnotations;
 using System.Data;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.AspNetCore.Http;
-
+using InventoryManagement.Helpers;
 namespace InventoryManagement.Models
 {
     public class UserModel
@@ -44,6 +44,7 @@ namespace InventoryManagement.Models
         public string MobileNo { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Date of Birth is required.")]
+        [AgeValidation(18)]
         public DateTime? DOB { get; set; }
 
         [Required(ErrorMessage = "Gender is required.")]
