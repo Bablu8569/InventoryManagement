@@ -210,7 +210,7 @@
             </div>
             <div class="info-field">
                 <div class="field-label">Price</div>
-                <div class="field-value">₹ @Model.Price.ToString("N2")</div>
+                <div class="field-value">₹ @Model.Price.GetValueOrDefault().ToString("N2")</div>
             </div>
             <div class="info-field">
                 <div class="field-label">Stock</div>

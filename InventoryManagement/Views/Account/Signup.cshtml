@@ -1,252 +1,301 @@
 ﻿@model InventoryManagement.Models.UserModel
+
 @{
     Layout = null;
 }
 
-<!DOCTYPE html>
+<link rel="stylesheet" href="~/css/signup.css" />
 
-<html lang="en">
+<div class="signup-container">
 
-<head>
+    <div class="signup-card">
 
-    <meta charset="utf-8" />
+        <h2>Create Account</h2>
 
-    <meta name="viewport"
-          content="width=device-width, initial-scale=1.0" />
+        <form asp-action="Signup"
+              method="post"
+              enctype="multipart/form-data"
+              id="signupForm">
 
-    <title>Create Account</title>
+            @Html.AntiForgeryToken()
 
-    <link rel="stylesheet"
-          href="~/css/signup.css" />
+            <div asp-validation-summary="ModelOnly"
+                 class="validation-summary-errors"></div>
 
-    <!-- Font Awesome -->
+            <div class="form-row">
 
-    <link rel="stylesheet"
-          href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+                <!-- LEFT COLUMN -->
 
-</head>
+                <div class="form-column">
 
-<body>
-
-    <div class="signup-container">
-
-        <div class="signup-card">
-
-            <h2>Create Account</h2>
-
-            <p class="subtitle">
-
-                Inventory Management System
-
-            </p>
-
-            <form asp-action="Signup"
-                  method="post"
-                  id="signupForm">
-
-                <!-- Validation Summary -->
-
-                <div asp-validation-summary="ModelOnly"
-                     class="validation-summary-errors">
-                </div>
-
-                <!-- Username -->
-
-                <div class="form-group">
-
-                    <label asp-for="Username"></label>
-
-                    <div class="password-box">
-
+                    <div class="form-group">
+                        <label>Name</label>
                         <input asp-for="Username"
-                               maxlength="20"
-                               placeholder="Enter Username" />
+                               placeholder="Full Name" />
 
-                        <span class="toggle-password"
-                              style="pointer-events:none;cursor:default;">
-
-                            <i class="fa-solid fa-user"></i>
-
-                        </span>
-
+                        <span asp-validation-for="Username"></span>
                     </div>
 
-                    <span asp-validation-for="Username"
-                          class="field-validation-error"></span>
-
-                </div>
-
-                <!-- Email -->
-
-                <div class="form-group">
-
-                    <label asp-for="Email"></label>
-
-                    <div class="password-box">
-
-                        <input asp-for="Email"
-                               type="email"
-                               placeholder="Enter Email Address" />
-
-                        <span class="toggle-password"
-                              style="pointer-events:none;cursor:default;">
-
-                            <i class="fa-solid fa-envelope"></i>
-
-                        </span>
-
-                    </div>
-
-                    <span asp-validation-for="Email"
-                          class="field-validation-error"></span>
-
-                </div>
-
-                <!-- Password -->
-
-                <div class="form-group">
-
-                    <label asp-for="Password"></label>
-
-                    <div class="password-box">
+                    <div class="form-group">
+                        <label>Password</label>
 
                         <input asp-for="Password"
-                               id="Password"
                                type="password"
-                               placeholder="Enter Password" />
+                               placeholder="Password" />
 
-                        <span class="toggle-password"
-                              data-target="#Password">
+                        <span asp-validation-for="Password"></span>
+                    </div>
 
-                            <i class="fa-solid fa-eye"></i>
+                    <div class="form-group">
 
-                        </span>
+                        <label>Profile Image</label>
+
+                        <input asp-for="ProfileImageFile"
+                               type="file" />
+
+                        <span asp-validation-for="ProfileImageFile"></span>
 
                     </div>
 
-                    <span asp-validation-for="Password"
-                          class="field-validation-error"></span>
+                    <div class="form-group">
+
+                        <label>Mobile Number</label>
+
+                        <input asp-for="MobileNo"
+                               placeholder="Mobile Number" />
+
+                        <span asp-validation-for="MobileNo"></span>
+
+                    </div>
+
+                    <div class="form-group">
+
+                        <label>Marital Status</label>
+
+                        <select asp-for="MaritalStatus">
+
+                            <option value="">-- Select Status --</option>
+                            <option>Single</option>
+                            <option>Married</option>
+
+                        </select>
+
+                        <span asp-validation-for="MaritalStatus"></span>
+
+                    </div>
 
                 </div>
 
-                <!-- Confirm Password -->
+                <!-- RIGHT COLUMN -->
 
-                <div class="form-group">
+                <div class="form-column">
+                    <div class="form-group">
 
-                    <label asp-for="ConfirmPassword"></label>
+                        <label>Email</label>
 
-                    <div class="password-box">
+                        <input asp-for="Email"
+                               placeholder="Email Address" />
+
+                        <span asp-validation-for="Email"></span>
+
+                    </div>
+
+                    <div class="form-group">
+
+                        <label>Confirm Password</label>
 
                         <input asp-for="ConfirmPassword"
-                               id="ConfirmPassword"
                                type="password"
                                placeholder="Confirm Password" />
 
-                        <span class="toggle-password"
-                              data-target="#ConfirmPassword">
-
-                            <i class="fa-solid fa-eye"></i>
-
-                        </span>
+                        <span asp-validation-for="ConfirmPassword"></span>
 
                     </div>
 
-                    <span asp-validation-for="ConfirmPassword"
-                          class="field-validation-error"></span>
+                    <div class="form-group">
+
+                        <label>Date of Birth</label>
+
+                        <input asp-for="DOB"
+                               type="date"
+                               id="DOB"
+                               max="@DateTime.Today.AddYears(-18).ToString("yyyy-MM-dd")" />
+
+                        <span asp-validation-for="DOB"></span>
+
+                        
+
+                    </div>
+
+                    <div class="form-group">
+
+                        <label>Gender</label>
+
+                        <div class="gender-group">
+
+                            <label>
+                                <input asp-for="Gender"
+                                       type="radio"
+                                       value="Male" />
+                                Male
+                            </label>
+
+                            <label>
+                                <input asp-for="Gender"
+                                       type="radio"
+                                       value="Female" />
+                                Female
+                            </label>
+
+                        </div>
+
+                        <span asp-validation-for="Gender"></span>
+
+                    </div>
+
+                    <div class="form-group">
+
+                        <label>Hobbies</label>
+
+                        <div class="hobby-group">
+
+                            <label>
+                                <input type="checkbox"
+                                       name="SelectedHobbies"
+                                       value="Reading" />
+                                Reading
+                            </label>
+
+                            <label>
+                                <input type="checkbox"
+                                       name="SelectedHobbies"
+                                       value="Sports" />
+                                Sports
+                            </label>
+
+                            <label>
+                                <input type="checkbox"
+                                       name="SelectedHobbies"
+                                       value="Music" />
+                                Music
+                            </label>
+
+                        </div>
+
+                    </div>
 
                 </div>
 
-                <button type="submit"
-                        class="btn-signup">
+            </div>
 
-                    <i class="fa-solid fa-user-plus"></i>
+            <!-- ADDRESS -->
 
-                    &nbsp;
+            <div class="form-group">
 
-                    Create Account
+                <label>Address</label>
 
-                </button>
+                <textarea asp-for="Address"
+                          placeholder="Enter Address"></textarea>
 
-            </form>
-
-            <div class="login-link">
-
-                Already have an account?
-
-                <a asp-controller="Account"
-                       asp-action="Login">
-
-                    Sign In
-
-                </a>
+                <span asp-validation-for="Address"></span>
 
             </div>
+
+            <!-- BUTTONS -->
+
+            <div class="button-group">
+
+                <button type="button"
+                        id="btnReset"
+                        class="btn-reset">
+                    Reset
+                </button>
+
+                <button type="submit"
+                        class="btn-signup">
+                    Create Account
+                </button>
+
+            </div>
+
+        </form>
+
+        <div class="login-link">
+
+            Already have an account?
+
+            <a asp-controller="Account"
+               asp-action="Login">
+                Login
+            </a>
 
         </div>
 
     </div>
 
-    <!-- jQuery -->
+</div>
 
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+<script src="~/lib/jquery-validation/dist/jquery.validate.min.js"></script>
+<script src="~/lib/jquery-validation-unobtrusive/jquery.validate.unobtrusive.min.js"></script>
 
-    <!-- Validation -->
+<script>
+    $(document).ready(function() {
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.5/jquery.validate.min.js"></script>
+        $("#btnReset").click(function() {
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validation-unobtrusive/3.2.13/jquery.validate.unobtrusive.min.js"></script>
+            // Reset form fields
+            $("#signupForm")[0].reset();
 
-    <script>
+            // Clear validation messages
+            $("span.field-validation-error")
+                .removeClass("field-validation-error")
+                .addClass("field-validation-valid")
+                .html("");
 
-        $(function () {
+            $(".validation-summary-errors")
+                .removeClass("validation-summary-errors")
+                .addClass("validation-summary-valid")
+                .html("");
 
-        $(".toggle-password").click(function () {
+            // Remove validation styles
+            $(".input-validation-error")
+                .removeClass("input-validation-error");
 
-        var target = $(this).data("target");
+            // Reset jQuery unobtrusive validation
+            var form = $("#signupForm");
 
-        if (!target)
-        return;
+            form.removeData("validator");
+            form.removeData("unobtrusiveValidation");
 
-        var input = $(target);
-
-        var icon = $(this).find("i");
-
-        if (input.attr("type") === "password") {
-
-        input.attr("type", "text");
-
-        icon.removeClass("fa-eye");
-
-        icon.addClass("fa-eye-slash");
-
-        }
-        else {
-
-        input.attr("type", "password");
-
-        icon.removeClass("fa-eye-slash");
-
-        icon.addClass("fa-eye");
-
-        }
-
+            $.validator.unobtrusive.parse(form);
         });
 
-        });
+    });
+        $("#DOB").change(function () {
 
-    </script>
+        var dob = new Date($(this).val());
 
-    @if (TempData["SignupSuccess"] != null)
-    {
-        <script>
+        var today = new Date();
 
-            alert('@Html.Raw(TempData["SignupSuccess"])');
+        var age = today.getFullYear() - dob.getFullYear();
 
-            window.location.href='@Url.Action("Login", "Account")';
+        var month = today.getMonth() - dob.getMonth();
 
-        </script>
-    }
+        if (month < 0 || (month === 0 && today.getDate() < dob.getDate()))
+            age--;
 
-</body>
+        if (age < 18)
+        {
+            $('[data-valmsg-for="DOB"]')
+                .text("Age must be at least 18 years.");
 
-</html>
+            $(this).val("");
+
+            return false;
+        }
+
+        $('[data-valmsg-for="DOB"]').text("");
+
+    });
+</script>

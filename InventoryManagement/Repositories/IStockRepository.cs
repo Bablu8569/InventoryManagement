@@ -12,5 +12,9 @@ namespace InventoryManagement.Repositories
         (bool Success, string Message) InsertStockTransaction(StockTransactionModel transaction);
         List<StockTransactionModel> GetStockTransactionsByProduct(int productId);
         DashboardModel GetDashboardStats();
+
+        List<ProductModel> GetProductList();
+
+        int GetCurrentStock(int productId);
     }
 }

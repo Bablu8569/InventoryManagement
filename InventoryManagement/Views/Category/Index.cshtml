@@ -154,7 +154,7 @@
         </div>
     }
 
-    <div id="categoryGrid" style="height: 500px; width: 100%;" class="ag-theme-alpine"></div>
+    <div id="categoryGrid" style="height:calc(100vh - 180px); width: 100%;" class="ag-theme-alpine"></div>
 </div>
 
 @section Scripts {
@@ -241,7 +241,6 @@
                 floatingFilter: true, 
                 filter: 'agTextColumnFilter',
                 sortable: true, 
-                flex: 2,
                 filterParams: { caseSensitive: false, filterOptions: ['contains'] }
             },
             { 
@@ -250,7 +249,6 @@
                 floatingFilter: true, 
                 filter: 'agTextColumnFilter',
                 sortable: true, 
-                flex: 2,
                 filterParams: { caseSensitive: false, filterOptions: ['contains'] }
             },
             { 
@@ -259,7 +257,6 @@
                 sortable: true, 
                 floatingFilter: true, 
                 filter: 'agTextColumnFilter',
-                width: 120,
                 cellRenderer: (params) => {
                     try {
                         return params.value ? "Active" : "Inactive";
@@ -273,7 +270,6 @@
             {
                  headerName: "Created Date",
     field: "createdDate",
-    width: 150,
     sortable: true,
     filter: 'agDateColumnFilter',
     floatingFilter: true,
@@ -293,7 +289,6 @@
                 field: "actions",
                 cellRenderer: ActionCellRenderer, 
                 pinned: 'right', 
-                width: 190, 
                 sortable: false, 
                 filter: false
             }
@@ -302,12 +297,12 @@
         const gridOptions = {
             columnDefs,
             defaultColDef: { sortable: true, filter: true, resizable: true },
-            pagination: false,
             rowSelection: 'single',
             animateRows: true,
+            flex: 1,
             onGridReady: (params) => {
                 try {
-                    params.api.sizeColumnsToFit();
+                    loadGridData();
                 } catch (error) {
                     console.error('Grid ready error:', error);
                 }

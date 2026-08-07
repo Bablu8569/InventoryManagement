@@ -153,6 +153,13 @@ namespace InventoryManagement.Repositories
                         ? DBNull.Value
                         : (object)model.Remarks.Trim()
                 );
+                                
+                                       ht.Add(
+                        "@TransactionDate",
+                        model.TransactionDate == DateTime.MinValue
+                            ? DateTime.Now
+                            : model.TransactionDate
+                    );
 
                 DataTable dt = _dbHelper.ExecuteStoredProcedure(
                     "USP_InsertStockTransaction",
@@ -311,6 +318,35 @@ namespace InventoryManagement.Repositories
                 Console.WriteLine($"Error in AddTransaction: {ex.Message}");
                 return false;
             }
+        }
+
+        public List<ProductModel> GetProductList()
+        {
+            var products = new List<ProductModel>();
+
+            DataTable dt = _dbHelper.ExecuteStoredProcedure("USP_GetProductsForStock");
+
+            foreach (DataRow row in dt.Rows)
+            {
+                products.Add(new ProductModel
+                {
+                    ProductId = Convert.ToInt32(row["ProductId"]),
+                    ProductName = row["ProductName"].ToString(),
+                    Quantity = Convert.ToInt32(row["Quantity"])
+                });
+            }
+
+            return products;
+        }
+
+        public int GetCurrentStock(int productId)
+        {
+            var ht = new Hashtable();
+            ht.Add("@ProductId", productId);
+
+            object result = _dbHelper.ExecuteScalar("USP_CheckStock", ht);
+
+            return result == null ? 0 : Convert.ToInt32(result);
         }
     }
 }

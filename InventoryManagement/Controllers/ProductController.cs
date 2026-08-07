@@ -141,21 +141,15 @@ namespace InventoryManagement.Controllers
 
                 if (message == "Product added successfully!")
                 {
-                    ViewBag.Success = message;
-
-                    // Dropdown reload
-                    ViewBag.Categories = CategoryModel.GetAll(_db);
-
-                    // Form clear
-                    return View(new ProductModel());
+                    TempData["Success"] = message;
+                    return RedirectToAction("Index");
                 }
-                else
-                {
-                    ViewBag.Categories = CategoryModel.GetAll(_db);
 
-                    ModelState.AddModelError("", message);
-                    return View(model);
-                }
+                ViewBag.Categories = CategoryModel.GetAll(_db);
+
+                ModelState.AddModelError("", message);
+
+                return View(model);
             }
             catch (SqlException ex)
             {

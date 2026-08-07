@@ -12,22 +12,24 @@ namespace InventoryManagement.Models
         public int ProductId { get; set; }
 
         [Required(ErrorMessage = "Product name is required")]
+        [RegularExpression(@"^(?=.*[A-Za-z])[A-Za-z0-9\s\-_()]+$",
+            ErrorMessage = "Product name must contain at least one letter and only valid characters are allowed.")]
         public string ProductName { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Category is required")]
-        public int CategoryId { get; set; }
+        public int? CategoryId { get; set; }
 
         public string CategoryName { get; set; } = string.Empty;
 
         [Required(ErrorMessage = "Price is required")]
-        [Range(0.01, double.MaxValue,
-            ErrorMessage = "Price must be greater than 0")]
-        public decimal Price { get; set; }
+        [Range(typeof(decimal), "1", "1000",
+            ErrorMessage = "Price must be between 1 and 1000")]
+        public decimal? Price { get; set; }
 
         [Required(ErrorMessage = "Quantity is required")]
-        [Range(0, int.MaxValue,
-            ErrorMessage = "Quantity cannot be negative")]
-        public int Quantity { get; set; }
+        [Range(1, 1000,
+            ErrorMessage = "Quantity must be between 1 and 1000")]
+        public int? Quantity { get; set; }
 
         public DateTime CreatedDate { get; set; } = DateTime.Now;
 
@@ -161,31 +163,41 @@ namespace InventoryManagement.Models
                     throw new Exception("DatabaseHelper cannot be null.");
                 }
 
-                if (string.IsNullOrEmpty(ProductName))
+                if (string.IsNullOrWhiteSpace(ProductName))
                 {
-                    return "Product name cannot be empty.";
+                    return "Product name is required.";
                 }
 
-                if (CategoryId <= 0)
+                if (!CategoryId.HasValue || CategoryId.Value <= 0)
                 {
-                    return "Invalid category selected.";
+                    return "Category is required.";
                 }
 
-                if (Price <= 0)
+                if (!Price.HasValue)
                 {
-                    return "Price must be greater than 0.";
+                    return "Price is required.";
                 }
 
-                if (Quantity < 0)
+                if (Price.Value < 1 || Price.Value > 1000)
                 {
-                    return "Quantity cannot be negative.";
+                    return "Price must be between 1 and 1000.";
+                }
+
+                if (!Quantity.HasValue)
+                {
+                    return "Quantity is required.";
+                }
+
+                if (Quantity.Value < 1 || Quantity.Value > 1000)
+                {
+                    return "Quantity must be between 1 and 1000.";
                 }
 
                 var ht = new Hashtable();
-                ht.Add("@ProductName", ProductName);
-                ht.Add("@CategoryId", CategoryId);
-                ht.Add("@Price", Price);
-                ht.Add("@Quantity", Quantity);
+                ht.Add("@ProductName", ProductName.Trim());
+                ht.Add("@CategoryId", CategoryId.Value);
+                ht.Add("@Price", Price.Value);
+                ht.Add("@Quantity", Quantity.Value);
 
                 DataTable dt = db.ExecuteStoredProcedure("USP_InsertProduct", ht);
 
@@ -222,32 +234,42 @@ namespace InventoryManagement.Models
                     return "Invalid product ID.";
                 }
 
-                if (string.IsNullOrEmpty(ProductName))
+                if (string.IsNullOrWhiteSpace(ProductName))
                 {
-                    return "Product name cannot be empty.";
+                    return "Product name is required.";
                 }
 
-                if (CategoryId <= 0)
+                if (!CategoryId.HasValue || CategoryId.Value <= 0)
                 {
-                    return "Invalid category selected.";
+                    return "Category is required.";
                 }
 
-                if (Price <= 0)
+                if (!Price.HasValue)
                 {
-                    return "Price must be greater than 0.";
+                    return "Price is required.";
                 }
 
-                if (Quantity < 0)
+                if (Price.Value < 1 || Price.Value > 1000)
                 {
-                    return "Quantity cannot be negative.";
+                    return "Price must be between 1 and 1000.";
+                }
+
+                if (!Quantity.HasValue)
+                {
+                    return "Quantity is required.";
+                }
+
+                if (Quantity.Value < 1 || Quantity.Value > 1000)
+                {
+                    return "Quantity must be between 1 and 1000.";
                 }
 
                 var ht = new Hashtable();
                 ht.Add("@ProductId", ProductId);
-                ht.Add("@ProductName", ProductName);
-                ht.Add("@CategoryId", CategoryId);
-                ht.Add("@Price", Price);
-                ht.Add("@Quantity", Quantity);
+                ht.Add("@ProductName", ProductName.Trim());
+                ht.Add("@CategoryId", CategoryId.Value);
+                ht.Add("@Price", Price.Value);
+                ht.Add("@Quantity", Quantity.Value);
 
                 DataTable dt = db.ExecuteStoredProcedure("USP_UpdateProduct", ht);
 
@@ -267,7 +289,6 @@ namespace InventoryManagement.Models
                 return "Error: " + ex.Message;
             }
         }
-
         // ================= DELETE =================
 
         public static string Delete(DatabaseHelper db, int id)
